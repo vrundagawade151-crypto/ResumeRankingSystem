@@ -14,7 +14,7 @@ class Job(db.Model):
     experience_required = db.Column(db.String(100))
     job_description = db.Column(db.Text, nullable=False)
     number_of_openings = db.Column(db.Integer, default=1)
-    status = db.Column(db.Enum('active', 'closed'), default='active')
+    status = db.Column(db.Enum('active', 'closed', name='job_status_enum'), default='active', nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

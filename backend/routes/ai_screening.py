@@ -8,8 +8,25 @@ from models.application import Application
 from models.resume import Resume
 from models.job import Job
 from models.recruiter import Recruiter
-from ai_engine.resume_parser import ResumeParser
-from ai_engine.ranking_engine import RankingEngine
+
+# Lazy imports to avoid nltk/regex dependency issues at startup
+# These will be imported inside functions when needed
+ResumeParser = None
+RankingEngine = None
+
+
+def _get_resume_parser():
+    global ResumeParser
+    if ResumeParser is None:
+        from ai_engine.resume_parser import ResumeParser
+    return ResumeParser
+
+
+def _get_ranking_engine():
+    global RankingEngine
+    if RankingEngine is None:
+        from ai_engine.ranking_engine import RankingEngine
+    return RankingEngine
 
 ai_screening_bp = Blueprint('ai_screening', __name__, url_prefix='/api/ai-screening')
 
@@ -44,7 +61,8 @@ def extract_and_rank_resumes():
     # Get applications with resume files
     applications = Application.query.filter_by(job_id=job_id).all()
     upload_dir = current_app.config.get('UPLOAD_FOLDER', 'uploads')
-    parser = ResumeParser()
+    ResumeParserCls = _get_resume_parser()
+    parser = ResumeParserCls()
     ranking_results = []
 
     processed = 0
@@ -82,7 +100,8 @@ def extract_and_rank_resumes():
         experience = parsed.get('experience') or app.experience or ''
 
         # Calculate ranking
-        engine = RankingEngine(
+        RankingEngineCls = _get_ranking_engine()
+        engine = RankingEngineCls(
             job.required_skills,
             job.experience_required,
             job.job_description

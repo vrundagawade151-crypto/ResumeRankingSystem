@@ -20,7 +20,7 @@ def generate_otp(length=6):
 def send_otp():
     """Send OTP for login (simulated - returns OTP in response for demo)."""
     data = request.get_json()
-    email = data.get('email')
+    email = data.get('email', '').strip().lower()  # Normalize email to lowercase
     role = data.get('role', 'candidate')  # candidate, recruiter, admin
     name = data.get('name')  # For registration
     company_name = data.get('company_name')  # For recruiter registration
@@ -84,16 +84,20 @@ def send_otp():
 def verify_otp():
     """Verify OTP and return JWT token."""
     data = request.get_json()
-    email = data.get('email')
-    otp = data.get('otp')
+    email = data.get('email', '').strip().lower()  # Normalize email to lowercase
+    otp = data.get('otp', '').strip()  # Strip whitespace from OTP
     role = data.get('role', 'candidate')
 
     if not email or not otp:
         return jsonify({'error': 'Email and OTP are required'}), 400
 
-    user = User.query.filter_by(email=email, role=role).first()
+    user = User.query.filter_by(email=email).first()
     if not user:
-        return jsonify({'error': 'User not found'}), 404
+        return jsonify({'error': 'User not found. Please request a new OTP.'}), 404
+
+    # Verify the role matches what was used during registration
+    if user.role != role:
+        return jsonify({'error': 'Invalid role for this email. Please use the correct role.'}), 401
 
     if user.otp != otp:
         return jsonify({'error': 'Invalid OTP'}), 401
@@ -118,7 +122,7 @@ def verify_otp():
         profile = {'email': user.email, 'role': 'admin'}
 
     token = create_access_token(
-        identity=user.id,
+        identity=str(user.id),
         additional_claims={'role': role, 'email': user.email}
     )
 
@@ -134,19 +138,22 @@ def verify_otp():
 def login_direct():
     """Direct login for admin (email + password) and demo purposes."""
     data = request.get_json()
-    email = data.get('email')
+    email = data.get('email', '').strip().lower()  # Normalize email to lowercase
     password = data.get('password')
     role = data.get('role', 'candidate')
 
     if not email:
         return jsonify({'error': 'Email is required'}), 400
 
-    user = User.query.filter_by(email=email, role=role).first()
+    user = User.query.filter_by(email=email).first()
     if not user:
         return jsonify({'error': 'User not found'}), 404
 
+    # Use the user's actual role from the database
+    actual_role = user.role
+
     # Admin can login with password (admin123)
-    if role == 'admin':
+    if actual_role == 'admin':
         if password != 'admin123':
             return jsonify({'error': 'Invalid credentials'}), 401
     else:
@@ -156,25 +163,25 @@ def login_direct():
             return jsonify({'error': 'Please verify OTP first', 'require_otp': True}), 401
 
     profile = None
-    if role == 'candidate':
+    if actual_role == 'candidate':
         candidate = Candidate.query.filter_by(user_id=user.id).first()
         profile = candidate.to_dict() if candidate else {'email': user.email}
-    elif role == 'recruiter':
+    elif actual_role == 'recruiter':
         recruiter = Recruiter.query.filter_by(user_id=user.id).first()
         profile = recruiter.to_dict() if recruiter else {'email': user.email}
-    elif role == 'admin':
+    elif actual_role == 'admin':
         profile = {'email': user.email, 'role': 'admin'}
 
     token = create_access_token(
-        identity=user.id,
-        additional_claims={'role': role, 'email': user.email}
+        identity=str(user.id),
+        additional_claims={'role': actual_role, 'email': user.email}
     )
 
     return jsonify({
         'token': token,
         'user': user.to_dict(),
         'profile': profile,
-        'role': role
+        'role': actual_role
     }), 200
 
 

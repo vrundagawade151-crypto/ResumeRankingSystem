@@ -30,7 +30,7 @@ def list_recruiter_jobs():
     if claims.get('role') != 'recruiter':
         return jsonify({'error': 'Unauthorized'}), 403
 
-    recruiter = Recruiter.query.filter_by(user_id=claims.get('sub')).first()
+    recruiter = Recruiter.query.filter_by(user_id=int(claims.get('sub'))).first()
     if not recruiter:
         return jsonify({'error': 'Recruiter profile not found'}), 404
 
@@ -51,7 +51,7 @@ def create_job():
     if claims.get('role') != 'recruiter':
         return jsonify({'error': 'Unauthorized'}), 403
 
-    recruiter = Recruiter.query.filter_by(user_id=claims.get('sub')).first()
+    recruiter = Recruiter.query.filter_by(user_id=int(claims.get('sub'))).first()
     if not recruiter:
         return jsonify({'error': 'Recruiter profile not found'}), 404
 
@@ -98,7 +98,7 @@ def update_job(job_id):
     if not job:
         return jsonify({'error': 'Job not found'}), 404
 
-    recruiter = Recruiter.query.filter_by(user_id=claims.get('sub')).first()
+    recruiter = Recruiter.query.filter_by(user_id=int(claims.get('sub'))).first()
     if job.recruiter_id != recruiter.id:
         return jsonify({'error': 'Unauthorized'}), 403
 
@@ -122,7 +122,7 @@ def delete_job(job_id):
     if not job:
         return jsonify({'error': 'Job not found'}), 404
 
-    recruiter = Recruiter.query.filter_by(user_id=claims.get('sub')).first()
+    recruiter = Recruiter.query.filter_by(user_id=int(claims.get('sub'))).first()
     if job.recruiter_id != recruiter.id:
         return jsonify({'error': 'Unauthorized'}), 403
 

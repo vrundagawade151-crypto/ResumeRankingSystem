@@ -10,7 +10,7 @@ class User(db.Model):
     email = db.Column(db.String(255), unique=True, nullable=False)
     phone = db.Column(db.String(20))
     password_hash = db.Column(db.String(255))
-    role = db.Column(db.Enum('candidate', 'recruiter', 'admin'), nullable=False)
+    role = db.Column(db.Enum('candidate', 'recruiter', 'admin', name='user_role_enum'), nullable=False)
     otp = db.Column(db.String(6))
     otp_expires_at = db.Column(db.DateTime)
     is_verified = db.Column(db.Boolean, default=False)

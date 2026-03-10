@@ -16,7 +16,7 @@ class Application(db.Model):
     education = db.Column(db.Text)
     experience = db.Column(db.Text)
     resume_path = db.Column(db.String(500))
-    status = db.Column(db.Enum('pending', 'screened', 'shortlisted', 'rejected'), default='pending')
+    status = db.Column(db.Enum('pending', 'screened', 'shortlisted', 'rejected', name='application_status_enum'), default='pending', nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

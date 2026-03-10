@@ -1,0 +1,89 @@
+.recruiter-dashboard {
+  min-height: 100vh;
+  background: var(--background);
+}
+
+.recruiter-dashboard .dashboard-header {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  color: white;
+  padding: 40px 24px;
+}
+
+.recruiter-dashboard .dashboard-header h1 {
+  font-size: 28px;
+  margin-bottom: 8px;
+}
+
+.recruiter-dashboard .dashboard-header p {
+  opacity: 0.9;
+}
+
+.recruiter-dashboard .dashboard-content {
+  padding: 40px 24px;
+}
+
+.recruiter-dashboard .jobs-section h2 {
+  margin-bottom: 24px;
+  font-size: 24px;
+  color: var(--secondary);
+}
+
+.recruiter-dashboard .empty-state {
+  padding: 48px;
+  text-align: center;
+  color: var(--gray-500);
+}
+
+.dashboard-actions {
+  margin-bottom: 24px;
+}
+
+.jobs-table-wrap {
+  overflow-x: auto;
+  background: var(--white);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.jobs-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.jobs-table th,
+.jobs-table td {
+  padding: 16px;
+  text-align: left;
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.jobs-table th {
+  background: var(--gray-50);
+  font-weight: 600;
+  color: var(--gray-700);
+}
+
+.jobs-table tr:hover td {
+  background: var(--gray-50);
+}
+
+.badge {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.badge-active {
+  background: #dcfce7;
+  color: var(--accent-dark);
+}
+
+.badge-closed {
+  background: var(--gray-200);
+  color: var(--gray-600);
+}
+
+.jobs-table td .btn-sm {
+  margin-right: 8px;
+}

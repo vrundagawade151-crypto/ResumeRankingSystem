@@ -1,0 +1,63 @@
+.applicant-list-page {
+  min-height: 100vh;
+  background: var(--background);
+}
+
+.back-link {
+  display: inline-block;
+  margin-bottom: 16px;
+  color: var(--primary);
+  font-weight: 500;
+}
+
+.back-link:hover {
+  text-decoration: none;
+}
+
+.page-content h1 {
+  font-size: 28px;
+  margin-bottom: 8px;
+  color: var(--secondary);
+}
+
+.subtitle {
+  color: var(--gray-500);
+  margin-bottom: 24px;
+}
+
+.applicant-actions {
+  margin-bottom: 24px;
+}
+
+.applicants-table-wrap {
+  padding: 0;
+  overflow-x: auto;
+}
+
+.applicants-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.applicants-table th,
+.applicants-table td {
+  padding: 16px;
+  text-align: left;
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.applicants-table th {
+  background: var(--gray-50);
+  font-weight: 600;
+  color: var(--gray-700);
+}
+
+.skills-cell {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.page-content {
+  padding: 40px 24px;
+}

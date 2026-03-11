@@ -186,3 +186,16 @@ See `database/schema.sql` for full schema. Main tables:
 ## License
 
 MIT
+
+## GIT commands
+
+move to a particular brach
+git checkout vrunda
+git switch vrunda
+
+git add .
+
+git commit -m "Changed files from vrunda to main"
+
+upload your committed changes from your local repository to a remote repository
+git push origin main    

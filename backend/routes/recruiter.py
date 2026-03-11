@@ -1,41 +1,75 @@
-"""Recruiter-specific routes."""
 from flask import Blueprint, request, jsonify
-from flask_jwt_extended import jwt_required, get_jwt
-from models.db import db
-from models.recruiter import Recruiter
+import jwt
 
-recruiter_bp = Blueprint('recruiter', __name__, url_prefix='/api/recruiter')
+recruiter_bp = Blueprint('recruiter', __name__)
 
+# Import from auth module (shared storage)
+import routes.auth as auth_module
 
-@recruiter_bp.route('/profile', methods=['GET'])
-@jwt_required()
-def get_profile():
-    """Get recruiter profile."""
-    claims = get_jwt()
-    if claims.get('role') != 'recruiter':
-        return jsonify({'error': 'Unauthorized'}), 403
+@recruiter_bp.route('/recruiter/profile', methods=['GET'])
+def get_recruiter_profile():
+    """Get recruiter profile"""
+    token = request.headers.get('Authorization')
+    if not token:
+        return jsonify({'message': 'Authentication required'}), 401
+    
+    try:
+        token = token.replace('Bearer ', '')
+        data = jwt.decode(token, 'your-secret-key-here', algorithms=['HS256'])
+        email = data.get('email')
+        
+        # Find user
+        user = None
+        for u in auth_module.users.values():
+            if u['email'] == email:
+                user = u
+                break
+        
+        if not user:
+            return jsonify({'message': 'User not found'}), 404
+        
+        return jsonify({
+            'id': user['id'],
+            'username': user['username'],
+            'email': user['email'],
+            'role': user.get('role', 'recruiter'),
+            'company': user.get('company', '')
+        }), 200
+    except:
+        return jsonify({'message': 'Invalid token'}), 401
 
-    recruiter = Recruiter.query.filter_by(user_id=claims.get('sub')).first()
-    if not recruiter:
-        return jsonify({'error': 'Profile not found'}), 404
-    return jsonify({'profile': recruiter.to_dict()}), 200
-
-
-@recruiter_bp.route('/profile', methods=['PUT'])
-@jwt_required()
-def update_profile():
-    """Update recruiter profile."""
-    claims = get_jwt()
-    if claims.get('role') != 'recruiter':
-        return jsonify({'error': 'Unauthorized'}), 403
-
-    recruiter = Recruiter.query.filter_by(user_id=claims.get('sub')).first()
-    if not recruiter:
-        return jsonify({'error': 'Profile not found'}), 404
-
-    data = request.get_json()
-    for key in ['name', 'company_name', 'phone']:
-        if key in data:
-            setattr(recruiter, key, data[key])
-    db.session.commit()
-    return jsonify({'profile': recruiter.to_dict(), 'message': 'Profile updated'}), 200
+@recruiter_bp.route('/recruiter/profile', methods=['PUT'])
+def update_recruiter_profile():
+    """Update recruiter profile"""
+    token = request.headers.get('Authorization')
+    if not token:
+        return jsonify({'message': 'Authentication required'}), 401
+    
+    try:
+        token = token.replace('Bearer ', '')
+        data = jwt.decode(token, 'your-secret-key-here', algorithms=['HS256'])
+        user_id = data.get('user_id')
+        
+        if user_id not in auth_module.users:
+            return jsonify({'message': 'User not found'}), 404
+        
+        update_data = request.get_json()
+        user = auth_module.users[user_id]
+        
+        if 'username' in update_data:
+            user['username'] = update_data['username']
+        if 'company' in update_data:
+            user['company'] = update_data['company']
+        
+        return jsonify({
+            'message': 'Profile updated',
+            'user': {
+                'id': user['id'],
+                'username': user['username'],
+                'email': user['email'],
+                'role': user.get('role', 'recruiter'),
+                'company': user.get('company', '')
+            }
+        }), 200
+    except:
+        return jsonify({'message': 'Invalid token'}), 401

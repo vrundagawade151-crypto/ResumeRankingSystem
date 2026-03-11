@@ -1,137 +1,93 @@
-"""Application and resume upload routes."""
-import os
-import uuid
-from werkzeug.utils import secure_filename
-from flask import Blueprint, request, jsonify, current_app
-from flask_jwt_extended import jwt_required, get_jwt
-from models.db import db
-from models.application import Application
-from models.job import Job
-from models.candidate import Candidate
-from models.recruiter import Recruiter
+from flask import Blueprint, request, jsonify
+from datetime import datetime
 
-applications_bp = Blueprint('applications', __name__, url_prefix='/api/applications')
+applications_bp = Blueprint('applications', __name__)
 
+# Import from jobs module (shared storage)
+import routes.jobs as jobs_module
+import routes.auth as auth_module
 
-def allowed_file(filename):
-    ext = filename.rsplit('.', 1)[-1].lower() if '.' in filename else ''
-    return ext in {'pdf', 'docx', 'doc'}
+@applications_bp.route('/applications', methods=['POST'])
+def create_application():
+    """Apply for a job"""
+    data = request.get_json()
+    
+    if not data or not data.get('job_id') or not data.get('applicant_name') or not data.get('applicant_email'):
+        return jsonify({'message': 'Missing required fields'}), 400
+    
+    job_id = data['job_id']
+    if job_id not in jobs_module.jobs:
+        return jsonify({'message': 'Job not found'}), 404
+    
+    # Create application
+    app_id = len(jobs_module.applications) + 1
+    application = {
+        'id': app_id,
+        'job_id': job_id,
+        'user_id': data.get('user_id'),
+        'applicant_name': data['applicant_name'],
+        'applicant_email': data['applicant_email'],
+        'resume_path': data.get('resume_path', ''),
+        'cover_letter': data.get('cover_letter', ''),
+        'status': 'pending',
+        'ai_score': None,
+        'ai_feedback': None,
+        'applied_at': datetime.utcnow().isoformat(),
+        'updated_at': datetime.utcnow().isoformat()
+    }
+    
+    jobs_module.applications[app_id] = application
+    
+    return jsonify(application), 201
 
+@applications_bp.route('/applications/job/<int:job_id>', methods=['GET'])
+def get_job_applications(job_id):
+    """Get all applications for a job"""
+    if job_id not in jobs_module.jobs:
+        return jsonify({'message': 'Job not found'}), 404
+    
+    app_list = [app for app in jobs_module.applications.values() if app['job_id'] == job_id]
+    return jsonify(app_list), 200
 
-@applications_bp.route('', methods=['POST'])
-@jwt_required()
-def apply_for_job():
-    """Candidate applies for a job with resume upload."""
-    claims = get_jwt()
-    if claims.get('role') != 'candidate':
-        return jsonify({'error': 'Only candidates can apply'}), 403
+@applications_bp.route('/applications/candidate', methods=['GET'])
+def get_candidate_applications():
+    """Get applications for the current candidate"""
+    # Get token from header
+    token = request.headers.get('Authorization')
+    if not token:
+        return jsonify({'message': 'Authentication required'}), 401
+    
+    try:
+        from flask import current_app
+        import jwt
+        token = token.replace('Bearer ', '')
+        data = jwt.decode(token, 'your-secret-key-here', algorithms=['HS256'])
+        user_email = data.get('email')
+        
+        # Filter applications by email
+        app_list = [app for app in jobs_module.applications.values() 
+                   if app['applicant_email'] == user_email]
+        return jsonify(app_list), 200
+    except:
+        return jsonify({'message': 'Invalid token'}), 401
 
-    candidate = Candidate.query.filter_by(user_id=claims.get('sub')).first()
-    if not candidate:
-        return jsonify({'error': 'Candidate profile not found'}), 404
+@applications_bp.route('/applications/<int:app_id>', methods=['GET'])
+def get_application(app_id):
+    """Get a specific application"""
+    application = jobs_module.applications.get(app_id)
+    if not application:
+        return jsonify({'message': 'Application not found'}), 404
+    return jsonify(application), 200
 
-    job_id = request.form.get('job_id') or request.get_json().get('job_id') if request.is_json else None
-    if not job_id:
-        return jsonify({'error': 'job_id is required'}), 400
-
-    job = Job.query.get(job_id)
-    if not job:
-        return jsonify({'error': 'Job not found'}), 404
-
-    # Check duplicate application
-    existing = Application.query.filter_by(job_id=job_id, candidate_id=candidate.id).first()
-    if existing:
-        return jsonify({'error': 'Already applied for this job'}), 400
-
-    # Get form data
-    name = request.form.get('name') or candidate.name
-    email = request.form.get('email') or candidate.email
-    phone = request.form.get('phone') or candidate.phone or ''
-    skills = request.form.get('skills') or candidate.skills or ''
-    education = request.form.get('education') or candidate.education or ''
-    experience = request.form.get('experience') or candidate.experience or ''
-
-    resume_path = None
-    if 'resume' in request.files:
-        file = request.files['resume']
-        if file and file.filename and allowed_file(file.filename):
-            upload_dir = current_app.config.get('UPLOAD_FOLDER', 'uploads')
-            os.makedirs(upload_dir, exist_ok=True)
-            ext = file.filename.rsplit('.', 1)[-1].lower()
-            filename = f"{uuid.uuid4().hex}_{secure_filename(file.filename)}"
-            filepath = os.path.join(upload_dir, filename)
-            file.save(filepath)
-            resume_path = filename
-
-    application = Application(
-        job_id=job_id,
-        candidate_id=candidate.id,
-        name=name,
-        email=email,
-        phone=phone,
-        skills=skills,
-        education=education,
-        experience=experience,
-        resume_path=resume_path
-    )
-    db.session.add(application)
-    db.session.commit()
-    return jsonify({'application': application.to_dict(), 'message': 'Application submitted successfully'}), 201
-
-
-@applications_bp.route('/job/<int:job_id>', methods=['GET'])
-@jwt_required()
-def get_applicants(job_id):
-    """Get applicants for a job (recruiter only)."""
-    claims = get_jwt()
-    if claims.get('role') != 'recruiter':
-        return jsonify({'error': 'Unauthorized'}), 403
-
-    job = Job.query.get(job_id)
-    if not job:
-        return jsonify({'error': 'Job not found'}), 404
-
-    recruiter = Recruiter.query.filter_by(user_id=claims.get('sub')).first()
-    if job.recruiter_id != recruiter.id:
-        return jsonify({'error': 'Unauthorized'}), 403
-
-    applications = Application.query.filter_by(job_id=job_id).order_by(Application.created_at.desc()).all()
-    result = [app.to_dict() for app in applications]
-    return jsonify({'applicants': result, 'total': len(result)}), 200
-
-
-@applications_bp.route('/candidate', methods=['GET'])
-@jwt_required()
-def get_my_applications():
-    """Get current candidate's applications."""
-    claims = get_jwt()
-    if claims.get('role') != 'candidate':
-        return jsonify({'error': 'Unauthorized'}), 403
-
-    candidate = Candidate.query.filter_by(user_id=claims.get('sub')).first()
-    if not candidate:
-        return jsonify({'error': 'Candidate profile not found'}), 404
-
-    applications = Application.query.filter_by(candidate_id=candidate.id).all()
-    result = []
-    for app in applications:
-        app_dict = app.to_dict()
-        app_dict['job'] = app.job_obj.to_dict() if app.job_obj else None
-        result.append(app_dict)
-    return jsonify({'applications': result}), 200
-
-
-@applications_bp.route('/resume/<path:filename>', methods=['GET'])
-@jwt_required()
-def get_resume_file(filename):
-    """Serve resume file (recruiter or admin only)."""
-    claims = get_jwt()
-    if claims.get('role') not in ['recruiter', 'admin']:
-        return jsonify({'error': 'Unauthorized'}), 403
-
-    from flask import send_from_directory
-    upload_dir = current_app.config.get('UPLOAD_FOLDER', 'uploads')
-    safe_name = secure_filename(os.path.basename(filename))
-    if not os.path.exists(os.path.join(upload_dir, safe_name)):
-        return jsonify({'error': 'File not found'}), 404
-    return send_from_directory(upload_dir, safe_name, as_attachment=True)
+@applications_bp.route('/applications/<int:app_id>', methods=['PUT'])
+def update_application(app_id):
+    """Update application status"""
+    application = jobs_module.applications.get(app_id)
+    if not application:
+        return jsonify({'message': 'Application not found'}), 404
+    
+    data = request.get_json()
+    application['status'] = data.get('status', application['status'])
+    application['updated_at'] = datetime.utcnow().isoformat()
+    
+    return jsonify(application), 200

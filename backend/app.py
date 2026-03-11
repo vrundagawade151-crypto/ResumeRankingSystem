@@ -1,58 +1,56 @@
-"""Flask application entry point."""
-import os
-from flask import Flask
+from flask import Flask, jsonify
 from flask_cors import CORS
-from flask_jwt_extended import JWTManager
-from dotenv import load_dotenv
-
-# Load environment variables from .env file
-load_dotenv()
+import os
 
 from config import Config
-from models.db import db
-from models.user import User
-from models.candidate import Candidate
-from models.recruiter import Recruiter
-from routes import auth_bp, jobs_bp, applications_bp, recruiter_bp, admin_bp, ai_screening_bp
-
+from routes.auth import auth_bp
+from routes.jobs import jobs_bp
+from routes.applications import applications_bp
+from routes.recruiter import recruiter_bp
+from routes.admin import admin_bp
+from routes.ai_screening import ai_bp
 
 def create_app(config_class=Config):
-    """Application factory."""
     app = Flask(__name__)
     app.config.from_object(config_class)
-
-    # Create upload directory
-    os.makedirs(app.config.get('UPLOAD_FOLDER', 'uploads'), exist_ok=True)
-
-    CORS(app, origins=config_class.CORS_ORIGINS, supports_credentials=True)
-    JWTManager(app)
-    db.init_app(app)
-
-    app.register_blueprint(auth_bp)
-    app.register_blueprint(jobs_bp)
-    app.register_blueprint(applications_bp)
-    app.register_blueprint(recruiter_bp)
-    app.register_blueprint(admin_bp)
-    app.register_blueprint(ai_screening_bp)
-
-    @app.route('/api/health')
+    
+    # Enable CORS
+    CORS(app)
+    
+    # Register blueprints
+    app.register_blueprint(auth_bp, url_prefix='/api')
+    app.register_blueprint(jobs_bp, url_prefix='/api')
+    app.register_blueprint(applications_bp, url_prefix='/api')
+    app.register_blueprint(recruiter_bp, url_prefix='/api')
+    app.register_blueprint(admin_bp, url_prefix='/api')
+    app.register_blueprint(ai_bp, url_prefix='/api')
+    
+    # Health check endpoint
+    @app.route('/')
+    def index():
+        return jsonify({
+            'message': 'Expense Tracker API is running',
+            'version': '1.0.0'
+        }), 200
+    
+    @app.route('/health')
     def health():
-        return {'status': 'ok', 'message': 'Resume Screening API is running'}
-
-    with app.app_context():
-        db.create_all()
-        # Ensure admin user exists
-        from models.user import User
-        admin = User.query.filter_by(email='admin@resumescreen.com', role='admin').first()
-        if not admin:
-            admin = User(email='admin@resumescreen.com', password_hash='admin123', role='admin', is_verified=True)
-            db.session.add(admin)
-            db.session.commit()
-
+        return jsonify({'status': 'healthy'}), 200
+    
+    # Error handlers
+    @app.errorhandler(404)
+    def not_found(error):
+        return jsonify({'message': 'Resource not found'}), 404
+    
+    @app.errorhandler(500)
+    def internal_error(error):
+        return jsonify({'message': 'Internal server error'}), 500
+    
     return app
 
-
+# Create the application
 app = create_app()
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000, host='0.0.0.0')
+    port = int(os.getenv('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=True)

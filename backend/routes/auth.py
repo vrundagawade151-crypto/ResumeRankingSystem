@@ -1,200 +1,210 @@
-"""Authentication routes - OTP login simulation."""
-import random
-import string
-from datetime import datetime, timedelta
 from flask import Blueprint, request, jsonify
-from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity, get_jwt
-from models.db import db
-from models.user import User
-from models.candidate import Candidate
-from models.recruiter import Recruiter
+from werkzeug.security import generate_password_hash, check_password_hash
+import jwt
+import random
+from datetime import datetime, timedelta
+from functools import wraps
 
-auth_bp = Blueprint('auth', __name__, url_prefix='/api/auth')
+auth_bp = Blueprint('auth', __name__)
 
+# In-memory storage for demo (replace with database in production)
+users = {}
+otp_store = {}  # email -> {otp, expiry, role}
 
-def generate_otp(length=6):
-    return ''.join(random.choices(string.digits, k=length))
+SECRET_KEY = 'your-secret-key-here'
 
+def token_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        token = request.headers.get('x-access-token')
+        if not token:
+            return jsonify({'message': 'Token is missing'}), 401
+        try:
+            data = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
+            current_user = users.get(data['user_id'])
+            if not current_user:
+                return jsonify({'message': 'User not found'}), 401
+        except:
+            return jsonify({'message': 'Token is invalid'}), 401
+        return f(current_user, *args, **kwargs)
+    return decorated
 
-@auth_bp.route('/send-otp', methods=['POST'])
+@auth_bp.route('/auth/send-otp', methods=['POST'])
 def send_otp():
-    """Send OTP for login (simulated - returns OTP in response for demo)."""
+    """Send OTP to user's email"""
     data = request.get_json()
-    email = data.get('email', '').strip().lower()  # Normalize email to lowercase
-    role = data.get('role', 'candidate')  # candidate, recruiter, admin
-    name = data.get('name')  # For registration
-    company_name = data.get('company_name')  # For recruiter registration
-    phone = data.get('phone')
-
-    if not email:
-        return jsonify({'error': 'Email is required'}), 400
-
-    otp = generate_otp(6)
-    otp_expires = datetime.utcnow() + timedelta(minutes=10)
-
-    user = User.query.filter_by(email=email).first()
-
-    if user:
-        user.otp = otp
-        user.otp_expires_at = otp_expires
-        db.session.commit()
-    else:
-        # New user - create account
-        if role == 'admin':
-            return jsonify({'error': 'Admin registration not allowed'}), 403
-
-        user = User(
-            email=email,
-            role=role,
-            otp=otp,
-            otp_expires_at=otp_expires,
-            is_verified=False
-        )
-        db.session.add(user)
-        db.session.commit()
-
-        if role == 'candidate' and name:
-            candidate = Candidate(
-                user_id=user.id,
-                name=name,
-                email=email,
-                phone=phone or ''
-            )
-            db.session.add(candidate)
-        elif role == 'recruiter' and name:
-            recruiter = Recruiter(
-                user_id=user.id,
-                name=name,
-                email=email,
-                company_name=company_name or '',
-                phone=phone or ''
-            )
-            db.session.add(recruiter)
-        db.session.commit()
-
-    # In production, send OTP via email/SMS. For demo, return in response
+    
+    if not data or not data.get('email') or not data.get('role'):
+        return jsonify({'message': 'Email and role are required'}), 400
+    
+    email = data['email']
+    role = data['role']  # 'candidate', 'recruiter', or 'admin'
+    
+    # Generate 6-digit OTP
+    otp = str(random.randint(100000, 999999))
+    
+    # Store OTP with 5-minute expiry
+    otp_store[email] = {
+        'otp': otp,
+        'expiry': datetime.utcnow() + timedelta(minutes=5),
+        'role': role,
+        'name': data.get('name', ''),
+        'company': data.get('company', '')
+    }
+    
+    # In production, send via email/SMS
+    # For demo, OTP is returned in response
     return jsonify({
         'message': 'OTP sent successfully',
-        'otp': otp,  # REMOVE IN PRODUCTION - only for demo
-        'email': email
-    }), 200
-
-
-@auth_bp.route('/verify-otp', methods=['POST'])
-def verify_otp():
-    """Verify OTP and return JWT token."""
-    data = request.get_json()
-    email = data.get('email', '').strip().lower()  # Normalize email to lowercase
-    otp = data.get('otp', '').strip()  # Strip whitespace from OTP
-    role = data.get('role', 'candidate')
-
-    if not email or not otp:
-        return jsonify({'error': 'Email and OTP are required'}), 400
-
-    user = User.query.filter_by(email=email).first()
-    if not user:
-        return jsonify({'error': 'User not found. Please request a new OTP.'}), 404
-
-    # Verify the role matches what was used during registration
-    if user.role != role:
-        return jsonify({'error': 'Invalid role for this email. Please use the correct role.'}), 401
-
-    if user.otp != otp:
-        return jsonify({'error': 'Invalid OTP'}), 401
-
-    if user.otp_expires_at and user.otp_expires_at < datetime.utcnow():
-        return jsonify({'error': 'OTP has expired'}), 401
-
-    user.is_verified = True
-    user.otp = None
-    user.otp_expires_at = None
-    db.session.commit()
-
-    # Get profile based on role
-    profile = None
-    if role == 'candidate':
-        candidate = Candidate.query.filter_by(user_id=user.id).first()
-        profile = candidate.to_dict() if candidate else {'email': user.email}
-    elif role == 'recruiter':
-        recruiter = Recruiter.query.filter_by(user_id=user.id).first()
-        profile = recruiter.to_dict() if recruiter else {'email': user.email}
-    elif role == 'admin':
-        profile = {'email': user.email, 'role': 'admin'}
-
-    token = create_access_token(
-        identity=str(user.id),
-        additional_claims={'role': role, 'email': user.email}
-    )
-
-    return jsonify({
-        'token': token,
-        'user': user.to_dict(),
-        'profile': profile,
+        'otp': otp,  # Demo only - remove in production!
+        'email': email,
         'role': role
     }), 200
 
-
-@auth_bp.route('/login', methods=['POST'])
-def login_direct():
-    """Direct login for admin (email + password) and demo purposes."""
+@auth_bp.route('/auth/verify-otp', methods=['POST'])
+def verify_otp():
+    """Verify OTP and login/register user"""
     data = request.get_json()
-    email = data.get('email', '').strip().lower()  # Normalize email to lowercase
-    password = data.get('password')
-    role = data.get('role', 'candidate')
-
-    if not email:
-        return jsonify({'error': 'Email is required'}), 400
-
-    user = User.query.filter_by(email=email).first()
+    
+    if not data or not data.get('email') or not data.get('otp') or not data.get('role'):
+        return jsonify({'message': 'Email, OTP, and role are required'}), 400
+    
+    email = data['email']
+    otp = data['otp']
+    role = data['role']
+    
+    # Check if OTP exists and is valid
+    if email not in otp_store:
+        return jsonify({'message': 'OTP not requested or expired'}), 400
+    
+    otp_data = otp_store[email]
+    
+    # Verify OTP and role match
+    if otp_data['otp'] != otp or otp_data['role'] != role:
+        return jsonify({'message': 'Invalid OTP'}), 400
+    
+    # Check if OTP is expired
+    if datetime.utcnow() > otp_data['expiry']:
+        del otp_store[email]
+        return jsonify({'message': 'OTP expired'}), 400
+    
+    # Find or create user
+    user = None
+    for u in users.values():
+        if u['email'] == email:
+            user = u
+            break
+    
     if not user:
-        return jsonify({'error': 'User not found'}), 404
-
-    # Use the user's actual role from the database
-    actual_role = user.role
-
-    # Admin can login with password (admin123)
-    if actual_role == 'admin':
-        if password != 'admin123':
-            return jsonify({'error': 'Invalid credentials'}), 401
-    else:
-        # For candidate/recruiter, require OTP flow in production
-        # For demo: allow login with any password if user exists
-        if not user.is_verified and not password:
-            return jsonify({'error': 'Please verify OTP first', 'require_otp': True}), 401
-
-    profile = None
-    if actual_role == 'candidate':
-        candidate = Candidate.query.filter_by(user_id=user.id).first()
-        profile = candidate.to_dict() if candidate else {'email': user.email}
-    elif actual_role == 'recruiter':
-        recruiter = Recruiter.query.filter_by(user_id=user.id).first()
-        profile = recruiter.to_dict() if recruiter else {'email': user.email}
-    elif actual_role == 'admin':
-        profile = {'email': user.email, 'role': 'admin'}
-
-    token = create_access_token(
-        identity=str(user.id),
-        additional_claims={'role': actual_role, 'email': user.email}
-    )
-
+        # Create new user
+        user_id = len(users) + 1
+        users[user_id] = {
+            'id': user_id,
+            'username': otp_data.get('name', email.split('@')[0]),
+            'email': email,
+            'password_hash': None,  # No password for OTP users
+            'role': role,
+            'is_admin': False,
+            'created_at': datetime.utcnow()
+        }
+        user = users[user_id]
+    
+    # Generate JWT token
+    token = jwt.encode({
+        'user_id': user['id'],
+        'email': user['email'],
+        'role': role,
+        'exp': datetime.utcnow() + timedelta(days=1)
+    }, SECRET_KEY, algorithm='HS256')
+    
+    # Clean up OTP
+    del otp_store[email]
+    
     return jsonify({
+        'message': 'Login successful',
         'token': token,
-        'user': user.to_dict(),
-        'profile': profile,
-        'role': actual_role
+        'user': {
+            'id': user['id'],
+            'username': user['username'],
+            'email': user['email'],
+            'role': role
+        },
+        'profile': {
+            'id': user['id'],
+            'username': user['username'],
+            'email': user['email'],
+            'role': role
+        },
+        'role': role
     }), 200
 
+@auth_bp.route('/auth/login', methods=['POST'])
+def login():
+    """Direct admin login with email and password"""
+    data = request.get_json()
+    
+    if not data or not data.get('email') or not data.get('password'):
+        return jsonify({'message': 'Email and password are required'}), 401
+    
+    user = None
+    for u in users.values():
+        if u['email'] == data['email']:
+            user = u
+            break
+    
+    if not user or not check_password_hash(user.get('password_hash', ''), data['password']):
+        return jsonify({'message': 'Invalid credentials'}), 401
+    
+    token = jwt.encode({
+        'user_id': user['id'],
+        'email': user['email'],
+        'role': user.get('role', 'admin'),
+        'exp': datetime.utcnow() + timedelta(days=1)
+    }, SECRET_KEY, algorithm='HS256')
+    
+    return jsonify({
+        'message': 'Login successful',
+        'token': token,
+        'user': {
+            'id': user['id'],
+            'username': user['username'],
+            'email': user['email'],
+            'role': user.get('role', 'admin')
+        }
+    }), 200
 
-def get_current_user_profile():
-    """Helper to get current user's profile based on role."""
-    claims = get_jwt()
-    role = claims.get('role')
-    user_id = get_jwt_identity()
+@auth_bp.route('/auth/register', methods=['POST'])
+def register():
+    """Register a new user with username, email, and password"""
+    data = request.get_json()
+    
+    if not data or not data.get('username') or not data.get('password') or not data.get('email'):
+        return jsonify({'message': 'Missing required fields'}), 400
+    
+    # Check if user already exists
+    for u in users.values():
+        if u['email'] == data['email']:
+            return jsonify({'message': 'User already exists'}), 409
+    
+    user_id = len(users) + 1
+    users[user_id] = {
+        'id': user_id,
+        'username': data['username'],
+        'email': data['email'],
+        'password_hash': generate_password_hash(data['password']),
+        'role': data.get('role', 'candidate'),
+        'is_admin': data.get('is_admin', False),
+        'created_at': datetime.utcnow()
+    }
+    
+    return jsonify({'message': 'User registered successfully', 'user_id': user_id}), 201
 
-    if role == 'candidate':
-        candidate = Candidate.query.filter_by(user_id=user_id).first()
-        return candidate.to_dict() if candidate else None
-    elif role == 'recruiter':
-        recruiter = Recruiter.query.filter_by(user_id=user_id).first()
-        return recruiter.to_dict() if recruiter else None
-    return None
+@auth_bp.route('/me', methods=['GET'])
+@token_required
+def get_current_user(current_user):
+    return jsonify({
+        'id': current_user['id'],
+        'username': current_user['username'],
+        'email': current_user['email'],
+        'role': current_user.get('role', 'candidate')
+    }), 200

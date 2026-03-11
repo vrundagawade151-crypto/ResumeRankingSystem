@@ -186,3 +186,8 @@ See `database/schema.sql` for full schema. Main tables:
 ## License
 
 MIT
+
+## Running commands
+cd backend
+venv312\Scripts\activate
+python app.py

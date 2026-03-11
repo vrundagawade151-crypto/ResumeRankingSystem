@@ -1,0 +1,74 @@
+.candidate-dashboard {
+  min-height: 100vh;
+  background: var(--background);
+}
+
+.dashboard-header {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  color: white;
+  padding: 40px 24px;
+}
+
+.dashboard-header h1 {
+  font-size: 28px;
+  margin-bottom: 8px;
+}
+
+.dashboard-header p {
+  opacity: 0.9;
+}
+
+.dashboard-content {
+  padding: 40px 24px;
+}
+
+.jobs-section h2 {
+  margin-bottom: 24px;
+  font-size: 24px;
+  color: var(--secondary);
+}
+
+.jobs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 24px;
+}
+
+.job-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.job-card h3 {
+  font-size: 20px;
+  margin-bottom: 8px;
+  color: var(--secondary);
+}
+
+.job-card .company {
+  color: var(--primary);
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.job-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--gray-500);
+  margin-bottom: 12px;
+}
+
+.job-desc {
+  font-size: 14px;
+  color: var(--gray-600);
+  flex: 1;
+  margin-bottom: 16px;
+}
+
+.empty-state {
+  padding: 48px;
+  text-align: center;
+  color: var(--gray-500);
+}

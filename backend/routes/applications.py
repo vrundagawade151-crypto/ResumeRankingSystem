@@ -11,14 +11,36 @@ import routes.auth as auth_module
 @applications_bp.route('/applications', methods=['POST'])
 def create_application():
     """Apply for a job"""
-    data = request.get_json()
+    # Accept multipart/form-data
+    if not request.form:
+        return jsonify({'message': 'Missing form data'}), 400
+        
+    job_id = request.form.get('job_id')
+    applicant_name = request.form.get('name') or request.form.get('applicant_name')
+    applicant_email = request.form.get('email') or request.form.get('applicant_email')
     
-    if not data or not data.get('job_id') or not data.get('applicant_name') or not data.get('applicant_email'):
+    if not job_id or not applicant_name or not applicant_email:
         return jsonify({'message': 'Missing required fields'}), 400
     
-    job_id = data['job_id']
+    try:
+        job_id = int(job_id)
+    except ValueError:
+        return jsonify({'message': 'Invalid job ID'}), 400
+        
     if job_id not in jobs_module.jobs:
         return jsonify({'message': 'Job not found'}), 404
+    
+    data = dict(request.form)
+    resume_file = request.files.get('resume')
+    resume_path = ''
+    if resume_file:
+        import os
+        from werkzeug.utils import secure_filename
+        # ensure uploads dir exists
+        os.makedirs('uploads', exist_ok=True)
+        filename = secure_filename(resume_file.filename)
+        resume_path = os.path.join('uploads', f"app_{len(jobs_module.applications) + 1}_{filename}")
+        resume_file.save(resume_path)
     
     # Create application
     app_id = len(jobs_module.applications) + 1
@@ -26,9 +48,10 @@ def create_application():
         'id': app_id,
         'job_id': job_id,
         'user_id': data.get('user_id'),
-        'applicant_name': data['applicant_name'],
-        'applicant_email': data['applicant_email'],
-        'resume_path': data.get('resume_path', ''),
+        'applicant_name': applicant_name,
+        'applicant_email': applicant_email,
+        'skills': request.form.get('skills', ''),
+        'resume_path': resume_path,
         'cover_letter': data.get('cover_letter', ''),
         'status': 'pending',
         'ai_score': None,
@@ -92,3 +115,17 @@ def update_application(app_id):
     application['updated_at'] = datetime.utcnow().isoformat()
     
     return jsonify(application), 200
+
+@applications_bp.route('/applications/resume/<path:filename>', methods=['GET'])
+def download_resume(filename):
+    """Download a resume file"""
+    import os
+    from flask import send_file
+    
+    # Path is relative to the backend directory where 'uploads' is created
+    file_path = filename
+    if not os.path.exists(file_path):
+        return jsonify({'message': 'File not found'}), 404
+        
+    return send_file(file_path, as_attachment=True)
+

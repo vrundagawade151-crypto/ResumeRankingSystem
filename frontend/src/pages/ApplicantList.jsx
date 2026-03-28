@@ -15,10 +15,10 @@ export default function ApplicantList() {
       getJob(jobId).then((r) => r.data),
     ])
       .then(([appData, jobData]) => {
-        setApplicants(appData.applicants || []);
-        setJob(jobData.job);
+        setApplicants(Array.isArray(appData) ? appData : (appData.applicants || []));
+        setJob(jobData.job || jobData);
       })
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setLoading(false));
   }, [jobId]);
 
@@ -70,8 +70,8 @@ export default function ApplicantList() {
                 {applicants.map((app, i) => (
                   <tr key={app.id}>
                     <td>{app.id}</td>
-                    <td>{app.name}</td>
-                    <td>{app.email}</td>
+                    <td>{app.name || app.applicant_name}</td>
+                    <td>{app.email || app.applicant_email}</td>
                     <td className="skills-cell">{app.skills || '-'}</td>
                     <td>
                       {app.resume_path ? (

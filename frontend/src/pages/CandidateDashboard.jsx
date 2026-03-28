@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { getJobs, getMyApplications } from '../api';
+import { getJobs, getMyApplications, uploadCandidateResume } from '../api';
 import ApplyModal from '../components/ApplyModal';
 import './CandidateDashboard.css';
 
@@ -70,13 +70,13 @@ export default function CandidateDashboard() {
   const filteredJobs = useMemo(() => {
     return jobs.filter((job) => {
       const searchLower = search.toLowerCase();
-      const matchesSearch = !search || 
+      const matchesSearch = !search ||
         (job.job_title || '').toLowerCase().includes(searchLower) ||
         (job.company_name || '').toLowerCase().includes(searchLower) ||
         (job.required_skills || '').toLowerCase().includes(searchLower);
-      const matchesLocation = !locationFilter || 
+      const matchesLocation = !locationFilter ||
         (job.company_name || '').toLowerCase().includes(locationFilter.toLowerCase());
-      const matchesExperience = !experienceFilter || 
+      const matchesExperience = !experienceFilter ||
         (job.experience_required || '').toLowerCase().includes(experienceFilter.toLowerCase());
       const matchesJobType = !jobTypeFilter || jobTypeFilter === 'all' ||
         (job.job_description || job.job_title || '').toLowerCase().includes(jobTypeFilter.toLowerCase());
@@ -87,6 +87,35 @@ export default function CandidateDashboard() {
   const handleLogout = () => {
     localStorage.clear();
     navigate('/');
+  };
+
+  const [uploadingResume, setUploadingResume] = useState(false);
+
+  const handleResumeUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingResume(true);
+    try {
+      const formData = new FormData();
+      formData.append('resume', file);
+      const res = await uploadCandidateResume(formData);
+
+      const updatedProfile = {
+        ...profile,
+        skills: res.data.extracted_details.skills,
+        experience: res.data.extracted_details.experience,
+        education: res.data.extracted_details.education,
+      };
+
+      localStorage.setItem('profile', JSON.stringify(updatedProfile));
+      alert('Resume uploaded & Profile details updated automatically!');
+      window.location.reload();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to upload resume');
+    } finally {
+      setUploadingResume(false);
+      e.target.value = null; // reset input
+    }
   };
 
   return (
@@ -347,7 +376,16 @@ export default function CandidateDashboard() {
                 </div>
               </div>
               <div className="profile-actions">
-                <button type="button" className="btn btn-primary">Upload Resume</button>
+                <input
+                  type="file"
+                  id="resume-upload"
+                  style={{ display: 'none' }}
+                  accept=".pdf,.doc,.docx"
+                  onChange={handleResumeUpload}
+                />
+                <button type="button" className="btn btn-primary" onClick={() => document.getElementById('resume-upload').click()} disabled={uploadingResume}>
+                  {uploadingResume ? 'Uploading...' : 'Upload Resume'}
+                </button>
                 <button type="button" className="icon-btn" aria-label="Edit Profile">
                   <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536M9 11l6 6M3 21h6l12-12a2.5 2.5 0 00-3.536-3.536L5.5 17.5 3 21z" />

@@ -34,6 +34,10 @@ export const verifyOTP = (email, otp, role) =>
   api.post('/auth/verify-otp', { email, otp, role });
 export const loginDirect = (email, password, role) =>
   api.post('/auth/login', { email, password, role });
+export const uploadCandidateResume = (formData) =>
+  api.post('/auth/profile/resume', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
 
 // Jobs
 export const getJobs = () => api.get('/jobs');
@@ -45,7 +49,9 @@ export const deleteJob = (id) => api.delete(`/jobs/${id}`);
 
 // Applications
 export const applyForJob = (formData) =>
-  api.post('/applications', formData);
+  api.post('/applications', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  });
 export const getApplicants = (jobId) => api.get(`/applications/job/${jobId}`);
 export const getMyApplications = () => api.get('/applications/candidate');
 

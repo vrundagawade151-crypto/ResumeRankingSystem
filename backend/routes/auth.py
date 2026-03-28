@@ -209,3 +209,49 @@ def get_current_user(current_user):
         'email': current_user['email'],
         'role': current_user.get('role', 'candidate')
     }), 200
+
+@auth_bp.route('/auth/profile/resume', methods=['POST'])
+@token_required
+def upload_candidate_resume(current_user):
+    import os
+    from werkzeug.utils import secure_filename
+    
+    if 'resume' not in request.files:
+        return jsonify({'message': 'No resume file provided'}), 400
+        
+    resume_file = request.files['resume']
+    if resume_file.filename == '':
+        return jsonify({'message': 'No selected file'}), 400
+        
+    os.makedirs('uploads', exist_ok=True)
+    filename = secure_filename(resume_file.filename)
+    resume_path = os.path.join('uploads', f"user_{current_user['id']}_{filename}")
+    resume_file.save(resume_path)
+    
+    # Mock extracted details based on the resume
+    extracted_details = {
+        'skills': ['Python', 'React', 'Node.js', 'System Design'],
+        'education': [
+            {
+                'degree': 'M.S. Computer Science',
+                'university': 'Tech Innovations University',
+                'year': '2023'
+            }
+        ],
+        'experience': [
+            {
+                'title': 'Senior Software Engineer',
+                'company': 'Advanced AI Labs',
+                'duration': '2021 - Present',
+                'location': 'Remote',
+                'description': 'Developed scalable backend services and AI-driven applications.'
+            }
+        ]
+    }
+    
+    return jsonify({
+        'message': 'Resume uploaded successfully',
+        'resume_path': resume_path,
+        'extracted_details': extracted_details
+    }), 200
+

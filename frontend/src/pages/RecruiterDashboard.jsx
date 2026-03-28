@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { getRecruiterJobs } from '../api';
-import Navbar from '../components/Navbar';
 import './RecruiterDashboard.css';
 
 export default function RecruiterDashboard() {
@@ -15,58 +14,95 @@ export default function RecruiterDashboard() {
       .finally(() => setLoading(false));
   }, []);
 
-  const profile = JSON.parse(localStorage.getItem('profile') || '{}');
+  const totalJobs = jobs.length;
+  const totalApplicants = jobs.reduce((sum, j) => sum + (j.applicant_count || 0), 0);
+  const shortlisted = 0;
+  const aiScreened = 0;
+
+  const statCards = [
+    { label: 'Total Jobs Posted', value: totalJobs, icon: 'briefcase' },
+    { label: 'Total Applicants', value: totalApplicants, icon: 'users' },
+    { label: 'Shortlisted Candidates', value: shortlisted, icon: 'check' },
+    { label: 'AI Screened Resumes', value: aiScreened, icon: 'sparkles' },
+  ];
 
   return (
     <div className="recruiter-dashboard">
-      <Navbar user={JSON.parse(localStorage.getItem('user'))} role="recruiter" />
-      <div className="dashboard-header">
-        <div className="container">
-          <h1>Welcome, {profile.name || 'Recruiter'}</h1>
-          <p>{profile.company_name || 'Company'} — Manage your job postings and applicants</p>
-        </div>
+      <div className="dashboard-page-header">
+        <h1>Dashboard</h1>
+        <p>Manage your job postings and applicants</p>
       </div>
-      <div className="container dashboard-content">
-        <div className="dashboard-actions">
+
+      <div className="stat-cards">
+        {statCards.map((card) => (
+          <div key={card.label} className="stat-card">
+            <div className="stat-card-icon" data-icon={card.icon}>
+              {card.icon === 'briefcase' && (
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+              )}
+              {card.icon === 'users' && (
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+              )}
+              {card.icon === 'check' && (
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              )}
+              {card.icon === 'sparkles' && (
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>
+              )}
+            </div>
+            <div className="stat-card-content">
+              <span className="stat-card-value">{card.value}</span>
+              <span className="stat-card-label">{card.label}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <section className="jobs-section">
+        <div className="jobs-section-header">
+          <h2>Your Job Postings</h2>
           <Link to="/recruiter/jobs/new" className="btn btn-primary">+ Post New Job</Link>
         </div>
-        <section className="jobs-section">
-          <h2>Your Job Postings</h2>
-          {loading ? (
-            <p>Loading...</p>
-          ) : jobs.length === 0 ? (
-            <p className="empty-state">No jobs yet. Create your first job posting!</p>
-          ) : (
-            <div className="jobs-table-wrap">
-              <table className="jobs-table">
-                <thead>
-                  <tr>
-                    <th>Job Title</th>
-                    <th>Company</th>
-                    <th>Applicants</th>
-                    <th>Status</th>
-                    <th>Actions</th>
+
+        {loading ? (
+          <div className="jobs-loading">Loading...</div>
+        ) : jobs.length === 0 ? (
+          <div className="jobs-empty-state card">
+            <p>No jobs yet. Create your first job posting!</p>
+            <Link to="/recruiter/jobs/new" className="btn btn-primary">Post Your First Job</Link>
+          </div>
+        ) : (
+          <div className="jobs-table-card card">
+            <table className="jobs-table">
+              <thead>
+                <tr>
+                  <th>Job Title</th>
+                  <th>Applicants</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {jobs.map((job) => (
+                  <tr key={job.id}>
+                    <td className="job-title-cell">{job.job_title}</td>
+                    <td>{job.applicant_count || 0}</td>
+                    <td>
+                      <span className={`badge badge-${job.status}`}>{job.status}</span>
+                    </td>
+                    <td>
+                      <Link to={`/recruiter/jobs/${job.id}/applicants`} className="btn btn-view-applicants">
+                        View Applicants
+                      </Link>
+                      <Link to={`/recruiter/jobs/${job.id}/ranking`} className="btn btn-ai-rank">AI Rank</Link>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {jobs.map((job) => (
-                    <tr key={job.id}>
-                      <td>{job.job_title}</td>
-                      <td>{job.company_name}</td>
-                      <td>{job.applicant_count || 0}</td>
-                      <td><span className={`badge badge-${job.status}`}>{job.status}</span></td>
-                      <td>
-                        <Link to={`/recruiter/jobs/${job.id}/applicants`} className="btn btn-ghost btn-sm">Applicants</Link>
-                        <Link to={`/recruiter/jobs/${job.id}/ranking`} className="btn btn-primary btn-sm">AI Rank</Link>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </section>
-      </div>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
     </div>
   );
 }

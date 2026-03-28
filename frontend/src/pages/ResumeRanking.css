@@ -1,6 +1,5 @@
 .resume-ranking-page {
-  min-height: 100vh;
-  background: var(--background);
+  max-width: 1200px;
 }
 
 .ranking-controls {

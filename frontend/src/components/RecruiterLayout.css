@@ -1,0 +1,265 @@
+/* Recruiter Layout - Modern SaaS Dashboard */
+.recruiter-layout {
+  min-height: 100vh;
+  display: flex;
+  background: #F8FAFC;
+}
+
+/* Sidebar */
+.recruiter-sidebar {
+  width: 260px;
+  min-width: 260px;
+  background: #0F172A;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  z-index: 100;
+}
+
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 24px;
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.sidebar-brand:hover {
+  color: #fff;
+  opacity: 0.9;
+}
+
+.brand-icon {
+  font-size: 24px;
+}
+
+.sidebar-nav {
+  flex: 1;
+  padding: 16px 12px;
+  overflow-y: auto;
+}
+
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 15px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+}
+
+.sidebar-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+.sidebar-item.active {
+  background: #2563EB;
+  color: #fff;
+}
+
+.sidebar-item.active:hover {
+  background: #1d4ed8;
+  color: #fff;
+}
+
+.sidebar-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.sidebar-logout {
+  margin-top: 8px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.sidebar-logout:hover {
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.1);
+}
+
+/* Main content area */
+.recruiter-main {
+  flex: 1;
+  margin-left: 260px;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* Header */
+.recruiter-header {
+  background: #fff;
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.05);
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.header-search {
+  flex: 1;
+  max-width: 400px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #F8FAFC;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 10px 16px;
+}
+
+.header-search:focus-within {
+  border-color: #2563EB;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.search-icon {
+  width: 20px;
+  height: 20px;
+  color: #64748b;
+}
+
+.search-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-size: 15px;
+  color: #0F172A;
+}
+
+.search-input::placeholder {
+  color: #94a3b8;
+}
+
+.search-input:focus {
+  outline: none;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.header-icon-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  border: none;
+  background: #F8FAFC;
+  color: #64748b;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: all 0.2s;
+}
+
+.header-icon-btn:hover {
+  background: #e2e8f0;
+  color: #0F172A;
+}
+
+.header-icon-btn svg {
+  width: 22px;
+  height: 22px;
+}
+
+.notification-dot {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 8px;
+  height: 8px;
+  background: #22C55E;
+  border-radius: 50%;
+}
+
+.header-profile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.profile-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #2563EB 0%, #1d4ed8 100%);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.profile-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.profile-name {
+  font-weight: 600;
+  font-size: 14px;
+  color: #0F172A;
+}
+
+.profile-role {
+  font-size: 12px;
+  color: #64748b;
+}
+
+/* Content */
+.recruiter-content {
+  flex: 1;
+  padding: 24px;
+}
+
+@media (max-width: 1024px) {
+  .recruiter-sidebar {
+    width: 72px;
+    min-width: 72px;
+  }
+
+  .sidebar-brand span:not(.brand-icon) {
+    display: none;
+  }
+
+  .sidebar-item span {
+    display: none;
+  }
+
+  .sidebar-item {
+    justify-content: center;
+    padding: 12px;
+  }
+
+  .recruiter-main {
+    margin-left: 72px;
+  }
+}

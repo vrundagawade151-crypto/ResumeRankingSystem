@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Landing from './pages/Landing';
 import Login from './pages/Login';
 import CandidateDashboard from './pages/CandidateDashboard';
+import RecruiterLayout from './components/RecruiterLayout';
 import RecruiterDashboard from './pages/RecruiterDashboard';
 import JobPosting from './pages/JobPosting';
 import ApplicantList from './pages/ApplicantList';
@@ -34,34 +35,15 @@ export default function App() {
           path="/recruiter"
           element={
             <ProtectedRoute roles={['recruiter']}>
-              <RecruiterDashboard />
+              <RecruiterLayout />
             </ProtectedRoute>
           }
-        />
-        <Route
-          path="/recruiter/jobs/new"
-          element={
-            <ProtectedRoute roles={['recruiter']}>
-              <JobPosting />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/recruiter/jobs/:jobId/applicants"
-          element={
-            <ProtectedRoute roles={['recruiter']}>
-              <ApplicantList />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/recruiter/jobs/:jobId/ranking"
-          element={
-            <ProtectedRoute roles={['recruiter']}>
-              <ResumeRanking />
-            </ProtectedRoute>
-          }
-        />
+        >
+          <Route index element={<RecruiterDashboard />} />
+          <Route path="jobs/new" element={<JobPosting />} />
+          <Route path="jobs/:jobId/applicants" element={<ApplicantList />} />
+          <Route path="jobs/:jobId/ranking" element={<ResumeRanking />} />
+        </Route>
         <Route
           path="/admin"
           element={

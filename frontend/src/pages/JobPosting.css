@@ -1,6 +1,5 @@
 .job-posting-page {
-  min-height: 100vh;
-  background: var(--background);
+  max-width: 800px;
 }
 
 .page-content {

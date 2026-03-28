@@ -4,6 +4,7 @@ import jwt
 import random
 from datetime import datetime, timedelta
 from functools import wraps
+from config import Config
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -11,7 +12,7 @@ auth_bp = Blueprint('auth', __name__)
 users = {}
 otp_store = {}  # email -> {otp, expiry, role}
 
-SECRET_KEY = 'your-secret-key-here'
+SECRET_KEY = Config.SECRET_KEY
 
 def token_required(f):
     @wraps(f)

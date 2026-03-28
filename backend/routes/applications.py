@@ -1,5 +1,6 @@
 from flask import Blueprint, request, jsonify
 from datetime import datetime
+from config import Config
 
 applications_bp = Blueprint('applications', __name__)
 
@@ -61,7 +62,7 @@ def get_candidate_applications():
         from flask import current_app
         import jwt
         token = token.replace('Bearer ', '')
-        data = jwt.decode(token, 'your-secret-key-here', algorithms=['HS256'])
+        data = jwt.decode(token, Config.SECRET_KEY, algorithms=['HS256'])
         user_email = data.get('email')
         
         # Filter applications by email

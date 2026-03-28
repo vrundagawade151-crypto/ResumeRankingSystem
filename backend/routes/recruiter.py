@@ -1,5 +1,6 @@
 from flask import Blueprint, request, jsonify
 import jwt
+from config import Config
 
 recruiter_bp = Blueprint('recruiter', __name__)
 
@@ -15,7 +16,7 @@ def get_recruiter_profile():
     
     try:
         token = token.replace('Bearer ', '')
-        data = jwt.decode(token, 'your-secret-key-here', algorithms=['HS256'])
+        data = jwt.decode(token, Config.SECRET_KEY, algorithms=['HS256'])
         email = data.get('email')
         
         # Find user
@@ -47,7 +48,7 @@ def update_recruiter_profile():
     
     try:
         token = token.replace('Bearer ', '')
-        data = jwt.decode(token, 'your-secret-key-here', algorithms=['HS256'])
+        data = jwt.decode(token, Config.SECRET_KEY, algorithms=['HS256'])
         user_id = data.get('user_id')
         
         if user_id not in auth_module.users:

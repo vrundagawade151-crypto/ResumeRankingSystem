@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { getJob, getApplicants, extractAndRankResumes, getRankedCandidates } from '../api';
-import Navbar from '../components/Navbar';
 import './ResumeRanking.css';
 
 export default function ResumeRanking() {
@@ -49,7 +48,6 @@ export default function ResumeRanking() {
 
   return (
     <div className="resume-ranking-page">
-      <Navbar user={JSON.parse(localStorage.getItem('user'))} role="recruiter" />
       <div className="container page-content">
         <Link to={`/recruiter/jobs/${jobId}/applicants`} className="back-link">← Back to Applicants</Link>
         <h1>AI Resume Screening</h1>

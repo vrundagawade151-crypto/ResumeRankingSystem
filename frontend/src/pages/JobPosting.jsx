@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createJob } from '../api';
-import Navbar from '../components/Navbar';
 import './JobPosting.css';
 
 export default function JobPosting() {
@@ -34,7 +33,6 @@ export default function JobPosting() {
 
   return (
     <div className="job-posting-page">
-      <Navbar user={JSON.parse(localStorage.getItem('user'))} role="recruiter" />
       <div className="container page-content">
         <h1>Post a New Job</h1>
         <div className="form-card card">

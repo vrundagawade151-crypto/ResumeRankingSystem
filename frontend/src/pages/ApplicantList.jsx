@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import api, { getApplicants, getJob } from '../api';
-import Navbar from '../components/Navbar';
 import './ApplicantList.css';
 
 export default function ApplicantList() {
@@ -40,7 +39,6 @@ export default function ApplicantList() {
 
   return (
     <div className="applicant-list-page">
-      <Navbar user={JSON.parse(localStorage.getItem('user'))} role="recruiter" />
       <div className="container page-content">
         <Link to="/recruiter" className="back-link">← Back to Jobs</Link>
         <h1>{job?.job_title || 'Applicants'}</h1>

@@ -199,3 +199,21 @@ git commit -m "Changed files from vrunda to main"
 
 upload your committed changes from your local repository to a remote repository
 git push origin main    
+
+
+
+
+# 1. Check current branch
+git branch
+
+# 2. Switch to arya branch (if not already)
+git checkout arya
+
+# 3. Add all updated files
+git add .
+
+# 4. Commit changes
+git commit -m "Updated code"
+
+# 5. Push to arya branch
+git push origin arya

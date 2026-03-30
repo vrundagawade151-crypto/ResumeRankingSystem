@@ -57,6 +57,8 @@ def create_job():
         location=data.get('location', ''),
         salary_range=data.get('salary_range', ''),
         job_type=data.get('job_type', 'full-time'),
+        experience_required=data.get('experience_required', ''),
+        number_of_openings=data.get('number_of_openings', 1),
         is_active=True
     )
     
@@ -79,6 +81,8 @@ def update_job(job_id):
     job.location = data.get('location', job.location)
     job.salary_range = data.get('salary_range', job.salary_range)
     job.job_type = data.get('job_type', job.job_type)
+    job.experience_required = data.get('experience_required', job.experience_required)
+    job.number_of_openings = data.get('number_of_openings', job.number_of_openings)
     job.is_active = data.get('is_active', job.is_active)
     job.updated_at = datetime.utcnow()
     

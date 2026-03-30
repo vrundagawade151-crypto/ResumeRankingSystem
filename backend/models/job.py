@@ -12,7 +12,9 @@ class Job(db.Model):
     requirements = Column(Text)
     location = Column(String(200))
     salary_range = Column(String(100))
-    job_type = Column(String(50))  # full-time, part-time, contract
+    job_type = Column(String(50))  # full-time, part-time, contract, internship, freelance
+    experience_required = Column(String(200))  # entry-level, mid-level, senior-level, lead-principal
+    number_of_openings = Column(Integer, default=1)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -27,6 +29,8 @@ class Job(db.Model):
             'location': self.location,
             'salary_range': self.salary_range,
             'job_type': self.job_type,
+            'experience_required': self.experience_required,
+            'number_of_openings': self.number_of_openings,
             'is_active': self.is_active,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None

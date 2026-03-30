@@ -1,11 +1,12 @@
 from flask import Blueprint, request, jsonify
 import jwt
+from config import Config
+from database import db
+from models.user import User
+from models.job import Job
+from models.application import Application
 
 admin_bp = Blueprint('admin', __name__)
-
-# Import from other modules
-import routes.auth as auth_module
-import routes.jobs as jobs_module
 
 @admin_bp.route('/admin/recruiters', methods=['GET'])
 def get_recruiters():
@@ -15,8 +16,8 @@ def get_recruiters():
         return jsonify({'message': 'Authentication required'}), 401
     
     try:
-        recruiters = [u for u in auth_module.users.values() if u.get('role') == 'recruiter']
-        return jsonify(recruiters), 200
+        recruiters = User.query.filter_by(role='recruiter').all()
+        return jsonify([user.to_dict() for user in recruiters]), 200
     except:
         return jsonify({'message': 'Invalid token'}), 401
 
@@ -28,8 +29,8 @@ def get_candidates():
         return jsonify({'message': 'Authentication required'}), 401
     
     try:
-        candidates = [u for u in auth_module.users.values() if u.get('role') == 'candidate']
-        return jsonify(candidates), 200
+        candidates = User.query.filter_by(role='candidate').all()
+        return jsonify([user.to_dict() for user in candidates]), 200
     except:
         return jsonify({'message': 'Invalid token'}), 401
 
@@ -41,8 +42,8 @@ def get_admin_jobs():
         return jsonify({'message': 'Authentication required'}), 401
     
     try:
-        job_list = list(jobs_module.jobs.values())
-        return jsonify(job_list), 200
+        jobs = Job.query.all()
+        return jsonify([job.to_dict() for job in jobs]), 200
     except:
         return jsonify({'message': 'Invalid token'}), 401
 
@@ -55,17 +56,18 @@ def get_statistics():
     
     try:
         # Count users by role
-        recruiters = [u for u in auth_module.users.values() if u.get('role') == 'recruiter']
-        candidates = [u for u in auth_module.users.values() if u.get('role') == 'candidate']
-        jobs = list(jobs_module.jobs.values())
-        applications = list(jobs_module.applications.values())
+        recruiters_count = User.query.filter_by(role='recruiter').count()
+        candidates_count = User.query.filter_by(role='candidate').count()
+        total_jobs = Job.query.count()
+        total_applications = Application.query.count()
+        active_jobs = Job.query.filter_by(is_active=True).count()
         
         return jsonify({
-            'total_recruiters': len(recruiters),
-            'total_candidates': len(candidates),
-            'total_jobs': len(jobs),
-            'total_applications': len(applications),
-            'active_jobs': len([j for j in jobs if j.get('is_active', True)])
+            'total_recruiters': recruiters_count,
+            'total_candidates': candidates_count,
+            'total_jobs': total_jobs,
+            'total_applications': total_applications,
+            'active_jobs': active_jobs
         }), 200
     except:
         return jsonify({'message': 'Invalid token'}), 401

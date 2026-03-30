@@ -1,10 +1,8 @@
 from sqlalchemy import Column, Integer, String, DateTime, Text, Boolean
-from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime
+from database import db
 
-Base = declarative_base()
-
-class Job(Base):
+class Job(db.Model):
     __tablename__ = 'jobs'
     
     id = Column(Integer, primary_key=True)

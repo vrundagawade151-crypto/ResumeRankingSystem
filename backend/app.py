@@ -3,6 +3,10 @@ from flask_cors import CORS
 import os
 
 from config import Config
+from database import db, init_db
+from models.user import User
+from models.job import Job
+from models.application import Application
 from routes.auth import auth_bp
 from routes.jobs import jobs_bp
 from routes.applications import applications_bp
@@ -13,6 +17,9 @@ from routes.ai_screening import ai_bp
 def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
+    
+    # Initialize database
+    init_db(app)
     
     # Enable CORS
     CORS(app)
@@ -48,9 +55,7 @@ def create_app(config_class=Config):
     
     return app
 
-# Create the application
-app = create_app()
-
 if __name__ == '__main__':
+    app = create_app()
     port = int(os.getenv('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=True)

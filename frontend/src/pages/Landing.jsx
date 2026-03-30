@@ -21,7 +21,7 @@ export default function Landing() {
             </div>
           </div>
           <div className="hero-visual">
-            <img className="hero-image" src="/assets/resume-screening-hero.png" alt="Resume screening workspace" />
+            <img className="hero-image" src="/assets/resume-screening-hero.svg" alt="Resume screening workspace" />
           </div>
         </div>
       </section>

@@ -1,10 +1,8 @@
 from sqlalchemy import Column, Integer, String, DateTime, Text, ForeignKey
-from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime
+from database import db
 
-Base = declarative_base()
-
-class Application(Base):
+class Application(db.Model):
     __tablename__ = 'applications'
     
     id = Column(Integer, primary_key=True)

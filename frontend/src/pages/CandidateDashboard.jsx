@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { getJobs, getMyApplications, uploadCandidateResume } from '../api';
+import api from '../api';
 import ApplyModal from '../components/ApplyModal';
 import './CandidateDashboard.css';
 
@@ -51,6 +52,7 @@ export default function CandidateDashboard() {
 
   const [applicationSearch, setApplicationSearch] = useState('');
   const [applicationSort, setApplicationSort] = useState('newest');
+  const [applicationFilter, setApplicationFilter] = useState('all');
 
   useEffect(() => {
     getJobs()
@@ -70,23 +72,75 @@ export default function CandidateDashboard() {
   const filteredJobs = useMemo(() => {
     return jobs.filter((job) => {
       const searchLower = search.toLowerCase();
-      const matchesSearch = !search ||
-        (job.job_title || '').toLowerCase().includes(searchLower) ||
-        (job.company_name || '').toLowerCase().includes(searchLower) ||
-        (job.required_skills || '').toLowerCase().includes(searchLower);
+      // Handle both backend 'title'/'company'/'requirements' and any frontend alternative names
+      const title = (job.job_title || job.title || '').toLowerCase();
+      const company = (job.company_name || job.company || '').toLowerCase();
+      const skills = (job.required_skills || job.requirements || '').toLowerCase();
+      
+      const matchesSearch = !search || 
+        title.includes(searchLower) || 
+        company.includes(searchLower) || 
+        skills.includes(searchLower);
+        
       const matchesLocation = !locationFilter ||
-        (job.company_name || '').toLowerCase().includes(locationFilter.toLowerCase());
+        (job.location || '').toLowerCase().includes(locationFilter.toLowerCase());
+        
       const matchesExperience = !experienceFilter ||
         (job.experience_required || '').toLowerCase().includes(experienceFilter.toLowerCase());
+        
       const matchesJobType = !jobTypeFilter || jobTypeFilter === 'all' ||
-        (job.job_description || job.job_title || '').toLowerCase().includes(jobTypeFilter.toLowerCase());
+        (job.job_type || '').toLowerCase().includes(jobTypeFilter.toLowerCase());
+        
       return matchesSearch && matchesLocation && matchesExperience && matchesJobType;
     });
   }, [jobs, search, locationFilter, experienceFilter, jobTypeFilter]);
 
+  const filteredApplications = useMemo(() => {
+    let result = applications.filter((app) => {
+      const status = (app.status || 'pending').toLowerCase();
+      
+      // Status filtering
+      if (applicationFilter === 'under_review' && !['pending', 'reviewed'].includes(status)) return false;
+      if (applicationFilter === 'shortlisted' && !['accepted', 'shortlisted', 'interview'].includes(status)) return false;
+      if (applicationFilter === 'rejected' && status !== 'rejected') return false;
+
+      // Search filtering
+      if (applicationSearch) {
+        const searchLower = applicationSearch.toLowerCase();
+        const job = jobs.find((j) => j.id === app.job_id);
+        const title = (job?.job_title || job?.title || app.job_title || '').toLowerCase();
+        const company = (job?.company_name || job?.company || app.company_name || '').toLowerCase();
+        if (!title.includes(searchLower) && !company.includes(searchLower)) return false;
+      }
+      return true;
+    });
+
+    // Sort by date
+    result.sort((a, b) => {
+      const dateA = new Date(a.applied_at || a.created_at || a.date_applied || 0);
+      const dateB = new Date(b.applied_at || b.created_at || b.date_applied || 0);
+      return applicationSort === 'newest' ? dateB - dateA : dateA - dateB;
+    });
+
+    return result;
+  }, [applications, applicationFilter, applicationSearch, applicationSort, jobs]);
+
   const handleLogout = () => {
     localStorage.clear();
     navigate('/');
+  };
+
+  const handleWithdraw = async (appId) => {
+    if (window.confirm('Are you sure you want to withdraw this application? This action cannot be undone.')) {
+      try {
+        await api.put(`/applications/${appId}`, { status: 'withdrawn' });
+        // Refresh apps
+        const res = await getMyApplications();
+        setApplications(Array.isArray(res.data) ? res.data : (res.data?.applications || []));
+      } catch (err) {
+        alert('Failed to withdraw application');
+      }
+    }
   };
 
   const [uploadingResume, setUploadingResume] = useState(false);
@@ -284,10 +338,10 @@ export default function CandidateDashboard() {
 
             <div className="applications-filters card">
               <div className="filter-tabs">
-                <button type="button" className="filter-tab active">All Applications</button>
-                <button type="button" className="filter-tab">Under Review</button>
-                <button type="button" className="filter-tab">Interview</button>
-                <button type="button" className="filter-tab">Rejected</button>
+                <button type="button" className={`filter-tab ${applicationFilter === 'all' ? 'active' : ''}`} onClick={() => setApplicationFilter('all')}>All Applications</button>
+                <button type="button" className={`filter-tab ${applicationFilter === 'under_review' ? 'active' : ''}`} onClick={() => setApplicationFilter('under_review')}>Under Review</button>
+                <button type="button" className={`filter-tab ${applicationFilter === 'shortlisted' ? 'active' : ''}`} onClick={() => setApplicationFilter('shortlisted')}>Shortlisted</button>
+                <button type="button" className={`filter-tab ${applicationFilter === 'rejected' ? 'active' : ''}`} onClick={() => setApplicationFilter('rejected')}>Rejected</button>
               </div>
               <div className="applications-search-row">
                 <div className="search-input-wrap">
@@ -312,42 +366,71 @@ export default function CandidateDashboard() {
                 </select>
               </div>
             </div>
-            {applications.length === 0 ? (
+            {filteredApplications.length === 0 ? (
               <div className="jobs-empty card">
-                <p>You haven&apos;t applied to any jobs yet.</p>
-                <button type="button" className="btn btn-primary" onClick={() => setActiveTab('jobs')}>
-                  Browse Jobs
+                <p>No applications found matching your criteria.</p>
+                <button type="button" className="btn btn-primary" onClick={() => {
+                  if (applications.length === 0) setActiveTab('jobs');
+                  else { setApplicationFilter('all'); setApplicationSearch(''); }
+                }}>
+                  {applications.length === 0 ? 'Browse Jobs' : 'Clear Filters'}
                 </button>
               </div>
             ) : (
               <div className="applications-list">
-                {applications.map((app) => {
+                {filteredApplications.map((app) => {
                   const job = jobs.find((j) => j.id === app.job_id);
-                  const skills = (job?.required_skills || app.skills || 'Python, SQL, React')
-                    .split(',')
-                    .map((s) => s.trim())
-                    .filter(Boolean)
-                    .slice(0, 4);
-                  const status = (app.status || 'under review').toLowerCase();
-                  const appliedDate = app.date_applied || app.applied_date || app.created_at || 'Apr 20, 2025';
+                  const rawStatus = (app.status || 'pending').toLowerCase();
+                  let displayStatus = 'Applied';
+                  let statusClass = 'status-applied';
+                  
+                  if (rawStatus === 'pending') { displayStatus = 'Applied'; statusClass = 'status-applied'; }
+                  if (rawStatus === 'reviewed') { displayStatus = 'Under Review'; statusClass = 'status-under-review'; }
+                  if (rawStatus === 'shortlisted' || rawStatus === 'accepted') { displayStatus = 'Shortlisted'; statusClass = 'status-shortlisted'; }
+                  if (rawStatus === 'interview') { displayStatus = 'Interview'; statusClass = 'status-interview'; }
+                  if (rawStatus === 'rejected') { displayStatus = 'Rejected'; statusClass = 'status-rejected'; }
+                  if (rawStatus === 'offer' || rawStatus === 'offer_received') { displayStatus = 'Offer'; statusClass = 'status-offer'; }
+                  if (rawStatus === 'withdrawn') { displayStatus = 'Withdrawn'; statusClass = 'status-applied'; }
+
+                  const appliedDate = app.date_applied || app.applied_date || app.created_at || app.applied_at || 'Apr 20, 2025';
+                  const resumeName = app.resume_path ? app.resume_path.split(/[\\/]/).pop() : 'resume.pdf';
+                  const isWithdrawable = !(displayStatus === 'Rejected' || displayStatus === 'Offer' || displayStatus === 'Withdrawn');
+
                   return (
                     <div key={app.id} className="application-card card">
-                      <div className="application-main">
-                        <div>
-                          <h3>{job?.job_title || app.job_title || 'Job'}</h3>
-                          <span className="job-company">{job?.company_name || app.company_name || '-'}</span>
-                          <div className="application-skills">
-                            {skills.map((skill) => (
-                              <span key={skill} className="skill-tag">{skill}</span>
-                            ))}
+                      <div className="application-main" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                          <div>
+                            <h3>{job?.job_title || job?.title || app.job_title || 'Job Title'}</h3>
+                            <span className="job-company" style={{ color: '#475569', fontWeight: 500, margin: '4px 0 0 0', fontSize: '14px' }}>
+                              {job?.company_name || job?.company || app.company_name || 'Company'} • {job?.location || 'Location'} • {job?.job_type || 'Job Type'}
+                            </span>
                           </div>
-                        </div>
-                        <div className="application-meta">
-                          <span className="application-date">Date Applied: {appliedDate}</span>
-                          <span className={`status-badge status-${status.replace(/\s+/g, '-')}`}>
-                            {app.status || 'Under Review'}
+                          <span className={`status-badge ${statusClass}`} style={{ marginLeft: '12px' }}>
+                            {displayStatus}
                           </span>
-                          <button type="button" className="btn btn-view-details">View Details</button>
+                        </div>
+                        
+                        <div style={{ marginTop: '16px', padding: '14px', background: '#f8fafc', borderRadius: '10px', fontSize: '13px', color: '#475569', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid #e2e8f0' }}>
+                          <div>
+                            <div><strong>Date Applied:</strong> {appliedDate.substring(0, 10)}</div>
+                            <div style={{ marginTop: '6px' }}><strong>Resume:</strong> {resumeName.replace('app_', '')}</div>
+                          </div>
+                          {app.ai_score ? (
+                            <div style={{ textAlign: 'right' }}>
+                              <span style={{ fontSize: '18px', fontWeight: 700, color: '#4f46e5' }}>{app.ai_score}%</span>
+                              <div style={{ fontSize: '10px', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Match Score</div>
+                            </div>
+                          ) : null}
+                        </div>
+
+                        <div className="application-actions" style={{ display: 'flex', gap: '8px', marginTop: '16px', flexWrap: 'wrap' }}>
+                          <button type="button" className="btn btn-primary" style={{ flex: 1, minWidth: '100%', marginBottom: '4px' }}>View Details</button>
+                          <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
+                            <button type="button" className="btn btn-ghost" style={{ flex: 1, fontSize: '13px', padding: '8px 12px' }}>Edit</button>
+                            <button type="button" className="btn btn-ghost" style={{ flex: 1, fontSize: '13px', padding: '8px 12px' }} onClick={() => app.resume_path && window.open('/api/applications/resume/' + encodeURIComponent(app.resume_path), '_blank')}>Resume</button>
+                            <button type="button" className="btn btn-ghost" style={{ flex: 1, fontSize: '13px', padding: '8px 12px', color: isWithdrawable ? '#dc2626' : '#cbd5e1', borderColor: isWithdrawable ? 'rgba(220, 38, 38, 0.2)' : '#e2e8f0' }} disabled={!isWithdrawable} onClick={() => handleWithdraw(app.id)}>Withdraw</button>
+                          </div>
                         </div>
                       </div>
                     </div>

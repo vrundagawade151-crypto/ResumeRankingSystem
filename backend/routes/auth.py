@@ -5,12 +5,13 @@ import random
 from datetime import datetime, timedelta
 from functools import wraps
 from config import Config
+from database import db
+from models.user import User
 
 auth_bp = Blueprint('auth', __name__)
 
-# In-memory storage for demo (replace with database in production)
-users = {}
-otp_store = {}  # email -> {otp, expiry, role}
+# In-memory OTP storage (temporary, expires in 5 minutes)
+otp_store = {}  # email -> {otp, expiry, role, name, company}
 
 SECRET_KEY = Config.SECRET_KEY
 
@@ -22,7 +23,7 @@ def token_required(f):
             return jsonify({'message': 'Token is missing'}), 401
         try:
             data = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
-            current_user = users.get(data['user_id'])
+            current_user = User.query.get(data['user_id'])
             if not current_user:
                 return jsonify({'message': 'User not found'}), 401
         except:
@@ -89,31 +90,25 @@ def verify_otp():
         del otp_store[email]
         return jsonify({'message': 'OTP expired'}), 400
     
-    # Find or create user
-    user = None
-    for u in users.values():
-        if u['email'] == email:
-            user = u
-            break
+    # Find or create user in database
+    user = User.query.filter_by(email=email).first()
     
     if not user:
         # Create new user
-        user_id = len(users) + 1
-        users[user_id] = {
-            'id': user_id,
-            'username': otp_data.get('name', email.split('@')[0]),
-            'email': email,
-            'password_hash': None,  # No password for OTP users
-            'role': role,
-            'is_admin': False,
-            'created_at': datetime.utcnow()
-        }
-        user = users[user_id]
+        user = User(
+            username=otp_data.get('name', email.split('@')[0]),
+            email=email,
+            password_hash=None,  # No password for OTP users
+            is_admin=False,
+            role=role
+        )
+        db.session.add(user)
+        db.session.commit()
     
     # Generate JWT token
     token = jwt.encode({
-        'user_id': user['id'],
-        'email': user['email'],
+        'user_id': user.id,
+        'email': user.email,
         'role': role,
         'exp': datetime.utcnow() + timedelta(days=1)
     }, SECRET_KEY, algorithm='HS256')
@@ -125,15 +120,15 @@ def verify_otp():
         'message': 'Login successful',
         'token': token,
         'user': {
-            'id': user['id'],
-            'username': user['username'],
-            'email': user['email'],
+            'id': user.id,
+            'username': user.username,
+            'email': user.email,
             'role': role
         },
         'profile': {
-            'id': user['id'],
-            'username': user['username'],
-            'email': user['email'],
+            'id': user.id,
+            'username': user.username,
+            'email': user.email,
             'role': role
         },
         'role': role
@@ -147,19 +142,15 @@ def login():
     if not data or not data.get('email') or not data.get('password'):
         return jsonify({'message': 'Email and password are required'}), 401
     
-    user = None
-    for u in users.values():
-        if u['email'] == data['email']:
-            user = u
-            break
+    user = User.query.filter_by(email=data['email']).first()
     
-    if not user or not check_password_hash(user.get('password_hash', ''), data['password']):
+    if not user or not check_password_hash(user.password_hash or '', data['password']):
         return jsonify({'message': 'Invalid credentials'}), 401
     
     token = jwt.encode({
-        'user_id': user['id'],
-        'email': user['email'],
-        'role': user.get('role', 'admin'),
+        'user_id': user.id,
+        'email': user.email,
+        'role': 'admin',
         'exp': datetime.utcnow() + timedelta(days=1)
     }, SECRET_KEY, algorithm='HS256')
     
@@ -167,10 +158,10 @@ def login():
         'message': 'Login successful',
         'token': token,
         'user': {
-            'id': user['id'],
-            'username': user['username'],
-            'email': user['email'],
-            'role': user.get('role', 'admin')
+            'id': user.id,
+            'username': user.username,
+            'email': user.email,
+            'role': 'admin'
         }
     }), 200
 
@@ -183,31 +174,31 @@ def register():
         return jsonify({'message': 'Missing required fields'}), 400
     
     # Check if user already exists
-    for u in users.values():
-        if u['email'] == data['email']:
-            return jsonify({'message': 'User already exists'}), 409
+    existing_user = User.query.filter_by(email=data['email']).first()
+    if existing_user:
+        return jsonify({'message': 'User already exists'}), 409
     
-    user_id = len(users) + 1
-    users[user_id] = {
-        'id': user_id,
-        'username': data['username'],
-        'email': data['email'],
-        'password_hash': generate_password_hash(data['password']),
-        'role': data.get('role', 'candidate'),
-        'is_admin': data.get('is_admin', False),
-        'created_at': datetime.utcnow()
-    }
+    # Create new user
+    user = User(
+        username=data['username'],
+        email=data['email'],
+        password_hash=generate_password_hash(data['password']),
+        is_admin=data.get('is_admin', False),
+        role=data.get('role', 'candidate')
+    )
+    db.session.add(user)
+    db.session.commit()
     
-    return jsonify({'message': 'User registered successfully', 'user_id': user_id}), 201
+    return jsonify({'message': 'User registered successfully', 'user_id': user.id}), 201
 
 @auth_bp.route('/me', methods=['GET'])
 @token_required
 def get_current_user(current_user):
     return jsonify({
-        'id': current_user['id'],
-        'username': current_user['username'],
-        'email': current_user['email'],
-        'role': current_user.get('role', 'candidate')
+        'id': current_user.id,
+        'username': current_user.username,
+        'email': current_user.email,
+        'role': current_user.role
     }), 200
 
 @auth_bp.route('/auth/profile/resume', methods=['POST'])
@@ -225,7 +216,7 @@ def upload_candidate_resume(current_user):
         
     os.makedirs('uploads', exist_ok=True)
     filename = secure_filename(resume_file.filename)
-    resume_path = os.path.join('uploads', f"user_{current_user['id']}_{filename}")
+    resume_path = os.path.join('uploads', f"user_{current_user.id}_{filename}")
     resume_file.save(resume_path)
     
     # Mock extracted details based on the resume

@@ -16,12 +16,13 @@ export default function Landing() {
             <h1>AI-Based Resume Screening &amp; Ranking System</h1>
             <p>Find the best candidates fast with AI-powered screening.</p>
             <div className="hero-actions">
-              <Link to="/login" className="btn btn-primary btn-lg">Get Started</Link>
-              <Link to="/login?role=recruiter" className="btn btn-outline btn-lg">Post a Job</Link>
+              <Link to="/role-selection" className="btn btn-primary btn-lg">Get Started</Link>
+              <Link to="/login?role=candidate" className="btn btn-accent btn-lg">Login as Candidate</Link>
+              <Link to="/login?role=recruiter" className="btn btn-outline btn-lg">Login as Recruiter</Link>
             </div>
           </div>
           <div className="hero-visual">
-            <img className="hero-image" src="/assets/resume-screening-hero.png" alt="Resume screening workspace" />
+            <img className="hero-image" src="/assets/resume-screening-hero.svg" alt="Resume screening workspace" />
           </div>
         </div>
       </section>

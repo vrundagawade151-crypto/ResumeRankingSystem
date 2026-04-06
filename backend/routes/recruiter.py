@@ -1,11 +1,10 @@
 from flask import Blueprint, request, jsonify
 import jwt
 from config import Config
+from database import db
+from models.user import User
 
 recruiter_bp = Blueprint('recruiter', __name__)
-
-# Import from auth module (shared storage)
-import routes.auth as auth_module
 
 @recruiter_bp.route('/recruiter/profile', methods=['GET'])
 def get_recruiter_profile():
@@ -17,24 +16,18 @@ def get_recruiter_profile():
     try:
         token = token.replace('Bearer ', '')
         data = jwt.decode(token, Config.SECRET_KEY, algorithms=['HS256'])
-        email = data.get('email')
+        user_id = data.get('user_id')
         
-        # Find user
-        user = None
-        for u in auth_module.users.values():
-            if u['email'] == email:
-                user = u
-                break
-        
+        user = User.query.get(user_id)
         if not user:
             return jsonify({'message': 'User not found'}), 404
         
         return jsonify({
-            'id': user['id'],
-            'username': user['username'],
-            'email': user['email'],
-            'role': user.get('role', 'recruiter'),
-            'company': user.get('company', '')
+            'id': user.id,
+            'username': user.username,
+            'email': user.email,
+            'role': user.role,
+            'company': user.company or ''
         }), 200
     except:
         return jsonify({'message': 'Invalid token'}), 401
@@ -51,25 +44,27 @@ def update_recruiter_profile():
         data = jwt.decode(token, Config.SECRET_KEY, algorithms=['HS256'])
         user_id = data.get('user_id')
         
-        if user_id not in auth_module.users:
+        user = User.query.get(user_id)
+        if not user:
             return jsonify({'message': 'User not found'}), 404
         
         update_data = request.get_json()
-        user = auth_module.users[user_id]
         
         if 'username' in update_data:
-            user['username'] = update_data['username']
+            user.username = update_data['username']
         if 'company' in update_data:
-            user['company'] = update_data['company']
+            user.company = update_data['company']
+        
+        db.session.commit()
         
         return jsonify({
             'message': 'Profile updated',
             'user': {
-                'id': user['id'],
-                'username': user['username'],
-                'email': user['email'],
-                'role': user.get('role', 'recruiter'),
-                'company': user.get('company', '')
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'role': user.role,
+                'company': user.company or ''
             }
         }), 200
     except:

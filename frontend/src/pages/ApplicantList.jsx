@@ -1,94 +1,137 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import api, { getApplicants, getJob } from '../api';
+import { useParams, useNavigate } from 'react-router-dom';
+import { getApplicants, getJob } from '../api';
 import './ApplicantList.css';
 
 export default function ApplicantList() {
   const { jobId } = useParams();
+  const navigate = useNavigate();
   const [applicants, setApplicants] = useState([]);
   const [job, setJob] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    Promise.all([
-      getApplicants(jobId).then((r) => r.data),
-      getJob(jobId).then((r) => r.data),
-    ])
-      .then(([appData, jobData]) => {
-        setApplicants(Array.isArray(appData) ? appData : (appData.applicants || []));
-        setJob(jobData.job || jobData);
-      })
-      .catch(() => { })
-      .finally(() => setLoading(false));
+    fetchData();
   }, [jobId]);
 
-  const downloadResume = async (path) => {
-    if (!path) return;
+  const fetchData = async () => {
     try {
-      const res = await api.get(`/applications/resume/${path}`, { responseType: 'blob' });
-      const url = window.URL.createObjectURL(new Blob([res.data]));
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = path.split('_').pop() || 'resume.pdf';
-      a.click();
-      window.URL.revokeObjectURL(url);
-    } catch (e) {
-      alert('Failed to download');
+      setLoading(true);
+      const [appRes, jobRes] = await Promise.all([
+        getApplicants(jobId),
+        getJob(jobId),
+      ]);
+      setApplicants(Array.isArray(appRes.data) ? appRes.data : (appRes.data?.applications || []));
+      setJob(jobRes.data?.job || jobRes.data);
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to load applicants');
+      console.error('Error:', err);
+    } finally {
+      setLoading(false);
     }
   };
 
+  const handleStatusChange = async (applicationId, newStatus) => {
+    console.log(`Updating application ${applicationId} to ${newStatus}`);
+    // Future: Add API call
+  };
+
+  const downloadResume = (resumePath) => {
+    if (resumePath) {
+      window.open(resumePath, '_blank');
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="applicant-list-page">
+        <div className="loading-state">
+          <p>Loading applicants...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="applicant-list-page">
-      <div className="container page-content">
-        <Link to="/recruiter" className="back-link">← Back to Jobs</Link>
-        <h1>{job?.job_title || 'Applicants'}</h1>
-        <p className="subtitle">{job?.company_name} — {applicants.length} applicant(s)</p>
-
-        <div className="applicant-actions">
-          <Link to={`/recruiter/jobs/${jobId}/ranking`} className="btn btn-primary">
-            🤖 Extract & Rank Resumes (AI)
-          </Link>
+      <div className="page-header">
+        <button className="btn btn-ghost btn-sm" onClick={() => navigate('/recruiter')}>← Back</button>
+        <div className="header-title">
+          <h1>{job?.title || job?.job_title || 'Applicants'}</h1>
+          <p className="subtitle">{job?.company || job?.company_name} — {applicants.length} applicant(s)</p>
         </div>
-
-        {loading ? (
-          <p>Loading applicants...</p>
-        ) : applicants.length === 0 ? (
-          <p className="empty-state">No applicants yet.</p>
-        ) : (
-          <div className="applicants-table-wrap card">
-            <table className="applicants-table">
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Name</th>
-                  <th>Email</th>
-                  <th>Skills</th>
-                  <th>Resume</th>
-                </tr>
-              </thead>
-              <tbody>
-                {applicants.map((app, i) => (
-                  <tr key={app.id}>
-                    <td>{app.id}</td>
-                    <td>{app.name || app.applicant_name}</td>
-                    <td>{app.email || app.applicant_email}</td>
-                    <td className="skills-cell">{app.skills || '-'}</td>
-                    <td>
-                      {app.resume_path ? (
-                        <button type="button" className="btn btn-ghost btn-sm" onClick={() => downloadResume(app.resume_path)}>
-                          Download
-                        </button>
-                      ) : (
-                        '-'
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
       </div>
+
+      {error && (
+        <div className="error-state card">
+          <p>⚠️ {error}</p>
+        </div>
+      )}
+
+      {applicants.length === 0 ? (
+        <div className="empty-state card">
+          <p>📭 No applicants yet</p>
+          <p className="text-muted">When candidates apply, they'll appear here</p>
+        </div>
+      ) : (
+        <div className="applicants-table-container card">
+          <table className="applicants-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Status</th>
+                <th>Applied On</th>
+                <th>Resume</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {applicants.map((applicant) => (
+                <tr key={applicant.id} className={`status-${applicant.status || 'pending'}`}>
+                  <td className="applicant-name">
+                    <strong>{applicant.candidate_name || 'Candidate'}</strong>
+                  </td>
+                  <td className="applicant-email">{applicant.email}</td>
+                  <td>
+                    <span className={`status-badge ${applicant.status || 'pending'}`}>
+                      {(applicant.status || 'pending').charAt(0).toUpperCase() + (applicant.status || 'pending').slice(1)}
+                    </span>
+                  </td>
+                  <td className="applied-date">
+                    {applicant.created_at ? new Date(applicant.created_at).toLocaleDateString() : 'N/A'}
+                  </td>
+                  <td>
+                    {applicant.resume_path ? (
+                      <button
+                        className="btn btn-sm btn-primary"
+                        onClick={() => downloadResume(applicant.resume_path)}
+                      >
+                        📥 Download
+                      </button>
+                    ) : (
+                      <span className="text-muted">No resume</span>
+                    )}
+                  </td>
+                  <td>
+                    <select
+                      className="status-select"
+                      value={applicant.status || 'pending'}
+                      onChange={(e) => handleStatusChange(applicant.id, e.target.value)}
+                    >
+                      <option value="pending">Pending</option>
+                      <option value="reviewed">Reviewed</option>
+                      <option value="accepted">Accepted</option>
+                      <option value="rejected">Rejected</option>
+                    </select>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }

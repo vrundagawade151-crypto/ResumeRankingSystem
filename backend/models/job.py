@@ -1,10 +1,8 @@
 from sqlalchemy import Column, Integer, String, DateTime, Text, Boolean
-from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime
+from database import db
 
-Base = declarative_base()
-
-class Job(Base):
+class Job(db.Model):
     __tablename__ = 'jobs'
     
     id = Column(Integer, primary_key=True)
@@ -14,7 +12,9 @@ class Job(Base):
     requirements = Column(Text)
     location = Column(String(200))
     salary_range = Column(String(100))
-    job_type = Column(String(50))  # full-time, part-time, contract
+    job_type = Column(String(50))  # full-time, part-time, contract, internship, freelance
+    experience_required = Column(String(200))  # entry-level, mid-level, senior-level, lead-principal
+    number_of_openings = Column(Integer, default=1)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -29,6 +29,8 @@ class Job(Base):
             'location': self.location,
             'salary_range': self.salary_range,
             'job_type': self.job_type,
+            'experience_required': self.experience_required,
+            'number_of_openings': self.number_of_openings,
             'is_active': self.is_active,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None

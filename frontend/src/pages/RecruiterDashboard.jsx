@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { getRecruiterJobs } from '../api';
+import { getRecruiterJobs, updateJob } from '../api';
 import './RecruiterDashboard.css';
 
 export default function RecruiterDashboard() {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [notifications, setNotifications] = useState([]);
+  const [showNotifications, setShowNotifications] = useState(false);
 
   useEffect(() => {
     getRecruiterJobs()
@@ -13,6 +15,43 @@ export default function RecruiterDashboard() {
       .catch(() => setJobs([]))
       .finally(() => setLoading(false));
   }, []);
+
+  const addNotification = (message, type = 'info') => {
+    const id = Date.now();
+    const notification = { id, message, type, timestamp: new Date() };
+    setNotifications(prev => [notification, ...prev]);
+    setTimeout(() => {
+      setNotifications(prev => prev.filter(n => n.id !== id));
+    }, 5000);
+  };
+
+  const handleToggleJobStatus = async (job) => {
+    const newStatus = job.status === 'active' ? 'closed' : 'active';
+    const action = newStatus === 'closed' ? 'deactivate' : 'activate';
+    
+    if (window.confirm(`Are you sure you want to ${action} "${job.job_title}"?`)) {
+      try {
+        await updateJob(job.id, { is_active: newStatus === 'active' });
+        // Update local state
+        setJobs(jobs.map(j => 
+          j.id === job.id ? { ...j, status: newStatus } : j
+        ));
+        addNotification(`Job "${job.job_title}" has been ${action}d successfully!`, 'success');
+      } catch (err) {
+        addNotification('Failed to update job status', 'error');
+      }
+    }
+  };
+
+  const handleShareLinkedIn = (job) => {
+    const jobUrl = `${window.location.origin}/job/${job.id}`;
+    const message = `Check out this job opening: ${job.job_title} at ${job.company_name || 'Our Company'}. ${job.location ? `Location: ${job.location}. ` : ''}Apply now: ${jobUrl} #hiring #recruitment`;
+    
+    const linkedInShareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(jobUrl)}`;
+    window.open(linkedInShareUrl, 'linkedin-share', 'width=600,height=400');
+    
+    addNotification(`Job "${job.job_title}" shared to LinkedIn!`, 'info');
+  };
 
   const totalJobs = jobs.length;
   const totalApplicants = jobs.reduce((sum, j) => sum + (j.applicant_count || 0), 0);
@@ -77,6 +116,9 @@ export default function RecruiterDashboard() {
               <thead>
                 <tr>
                   <th>Job Title</th>
+                  <th>Experience</th>
+                  <th>Location</th>
+                  <th>Job Type</th>
                   <th>Applicants</th>
                   <th>Status</th>
                   <th>Action</th>
@@ -86,9 +128,20 @@ export default function RecruiterDashboard() {
                 {jobs.map((job) => (
                   <tr key={job.id}>
                     <td className="job-title-cell">{job.job_title}</td>
+                    <td>{job.experience_required || '-'}</td>
+                    <td>{job.location || '-'}</td>
+                    <td>{job.job_type || '-'}</td>
                     <td>{job.applicant_count || 0}</td>
                     <td>
                       <span className={`badge badge-${job.status}`}>{job.status}</span>
+                      <button
+                        type="button"
+                        className={`btn btn-toggle-status ${job.status}`}
+                        onClick={() => handleToggleJobStatus(job)}
+                        title={job.status === 'active' ? 'Deactivate job' : 'Activate job'}
+                      >
+                        {job.status === 'active' ? 'Deactivate' : 'Activate'}
+                      </button>
                     </td>
                     <td>
                       <Link to={`/recruiter/jobs/${job.id}/applicants`} className="btn btn-view-applicants">

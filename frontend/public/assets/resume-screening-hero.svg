@@ -1,0 +1,121 @@
+<svg viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="800" height="600" fill="#f8fafc"/>
+  
+  <!-- Desk/Workspace -->
+  <rect x="50" y="350" width="700" height="200" rx="10" fill="#e8eef5"/>
+  
+  <!-- Monitor -->
+  <g>
+    <!-- Monitor body -->
+    <rect x="150" y="100" width="500" height="300" rx="15" fill="#1e293b" stroke="#0f172a" stroke-width="3"/>
+    
+    <!-- Monitor stand -->
+    <rect x="350" y="380" width="100" height="40" fill="#475569" rx="5"/>
+    <rect x="320" y="410" width="160" height="20" fill="#64748b" rx="3"/>
+    
+    <!-- Screen content -->
+    <rect x="170" y="120" width="460" height="260" fill="#f1f5f9" rx="10"/>
+    
+    <!-- Resume list on screen -->
+    <g>
+      <!-- Header -->
+      <rect x="185" y="135" width="430" height="30" fill="#3b82f6" rx="5"/>
+      <text x="200" y="158" font-size="16" font-weight="bold" fill="white">Candidates</text>
+      
+      <!-- Resume items -->
+      <g>
+        <!-- Item 1 -->
+        <rect x="185" y="175" width="200" height="25" fill="#e0e7ff" rx="3"/>
+        <text x="195" y="194" font-size="13" font-weight="600" fill="#1e3a8a">John Smith</text>
+        
+        <!-- Score badge -->
+        <circle cx="415" cy="187" r="12" fill="#10b981"/>
+        <text x="410" y="192" font-size="11" font-weight="bold" fill="white" text-anchor="middle">92</text>
+        
+        <!-- Item 2 -->
+        <rect x="185" y="210" width="200" height="25" fill="#e0e7ff" rx="3"/>
+        <text x="195" y="229" font-size="13" font-weight="600" fill="#1e3a8a">Sarah Johnson</text>
+        
+        <!-- Score badge -->
+        <circle cx="415" cy="222" r="12" fill="#f59e0b"/>
+        <text x="410" y="227" font-size="11" font-weight="bold" fill="white" text-anchor="middle">78</text>
+        
+        <!-- Item 3 -->
+        <rect x="185" y="245" width="200" height="25" fill="#e0e7ff" rx="3"/>
+        <text x="195" y="264" font-size="13" font-weight="600" fill="#1e3a8a">Mike Chen</text>
+        
+        <!-- Score badge -->
+        <circle cx="415" cy="257" r="12" fill="#ef4444"/>
+        <text x="410" y="262" font-size="11" font-weight="bold" fill="white" text-anchor="middle">65</text>
+        
+        <!-- Item 4 -->
+        <rect x="185" y="280" width="200" height="25" fill="#e0e7ff" rx="3"/>
+        <text x="195" y="299" font-size="13" font-weight="600" fill="#1e3a8a">Emily Davis</text>
+        
+        <!-- Score badge -->
+        <circle cx="415" cy="292" r="12" fill="#10b981"/>
+        <text x="410" y="297" font-size="11" font-weight="bold" fill="white" text-anchor="middle">88</text>
+      </g>
+    </g>
+  </g>
+  
+  <!-- Papers/Documents on desk -->
+  <g>
+    <!-- Paper 1 -->
+    <rect x="80" y="420" width="140" height="100" fill="#fef3c7" stroke="#f59e0b" stroke-width="2" rx="3" transform="rotate(-15 150 470)"/>
+    <line x1="100" y1="440" x2="180" y2="440" stroke="#92400e" stroke-width="1"/>
+    <line x1="100" y1="455" x2="180" y2="455" stroke="#92400e" stroke-width="1"/>
+    <line x1="100" y1="470" x2="160" y2="470" stroke="#92400e" stroke-width="1"/>
+    
+    <!-- Paper 2 -->
+    <rect x="620" y="430" width="140" height="100" fill="#dbeafe" stroke="#3b82f6" stroke-width="2" rx="3" transform="rotate(20 690 480)"/>
+    <line x1="640" y1="450" x2="720" y2="450" stroke="#1e40af" stroke-width="1"/>
+    <line x1="640" y1="465" x2="720" y2="465" stroke="#1e40af" stroke-width="1"/>
+    <line x1="640" y1="480" x2="700" y2="480" stroke="#1e40af" stroke-width="1"/>
+  </g>
+  
+  <!-- Keyboard -->
+  <rect x="250" y="480" width="300" height="60" fill="#34495e" rx="5"/>
+  <g>
+    <!-- Keys -->
+    <rect x="260" y="490" width="15" height="15" fill="#4a5f7f" rx="2"/>
+    <rect x="280" y="490" width="15" height="15" fill="#4a5f7f" rx="2"/>
+    <rect x="300" y="490" width="15" height="15" fill="#4a5f7f" rx="2"/>
+    <rect x="320" y="490" width="15" height="15" fill="#4a5f7f" rx="2"/>
+    <rect x="340" y="490" width="15" height="15" fill="#4a5f7f" rx="2"/>
+    <rect x="360" y="490" width="15" height="15" fill="#4a5f7f" rx="2"/>
+    <rect x="380" y="490" width="15" height="15" fill="#4a5f7f" rx="2"/>
+    <rect x="400" y="490" width="15" height="15" fill="#4a5f7f" rx="2"/>
+    <rect x="420" y="490" width="15" height="15" fill="#4a5f7f" rx="2"/>
+    
+    <rect x="260" y="510" width="15" height="15" fill="#4a5f7f" rx="2"/>
+    <rect x="280" y="510" width="15" height="15" fill="#4a5f7f" rx="2"/>
+    <rect x="300" y="510" width="15" height="15" fill="#4a5f7f" rx="2"/>
+    <rect x="320" y="510" width="15" height="15" fill="#4a5f7f" rx="2"/>
+    <rect x="340" y="510" width="15" height="15" fill="#4a5f7f" rx="2"/>
+    <rect x="360" y="510" width="15" height="15" fill="#4a5f7f" rx="2"/>
+    <rect x="380" y="510" width="15" height="15" fill="#4a5f7f" rx="2"/>
+  </g>
+  
+  <!-- Mouse -->
+  <ellipse cx="570" cy="510" rx="25" ry="35" fill="#2c3e50"/>
+  <ellipse cx="570" cy="500" rx="20" ry="10" fill="#34495e"/>
+  
+  <!-- AI Badge/Icon floating -->
+  <g>
+    <circle cx="700" cy="150" r="35" fill="#3b82f6" opacity="0.9"/>
+    <text x="700" y="160" font-size="18" font-weight="bold" fill="white" text-anchor="middle">AI</text>
+  </g>
+  
+  <!-- Checkmark icons (showing screening results) -->
+  <g>
+    <!-- Checkmark 1 -->
+    <circle cx="100" cy="200" r="20" fill="#10b981" opacity="0.8"/>
+    <path d="M 92 210 L 98 216 L 110 204" stroke="white" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    
+    <!-- Checkmark 2 -->
+    <circle cx="750" cy="280" r="20" fill="#10b981" opacity="0.8"/>
+    <path d="M 742 290 L 748 296 L 760 284" stroke="white" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

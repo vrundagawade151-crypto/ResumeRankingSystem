@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Landing from './pages/Landing';
+import RoleSelection from './pages/RoleSelection';
 import Login from './pages/Login';
 import CandidateDashboard from './pages/CandidateDashboard';
 import RecruiterLayout from './components/RecruiterLayout';
@@ -22,6 +23,7 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Landing />} />
+        <Route path="/role-selection" element={<RoleSelection />} />
         <Route path="/login" element={<Login />} />
         <Route
           path="/candidate"

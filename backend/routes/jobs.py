@@ -61,9 +61,13 @@ def create_job():
         number_of_openings=data.get('number_of_openings', 1),
         is_active=True
     )
-    
-    db.session.add(job)
-    db.session.commit()
+
+    try:
+        db.session.add(job)
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'message': 'Failed to create job', 'error': str(e)}), 500
     
     return jsonify(job.to_dict()), 201
 

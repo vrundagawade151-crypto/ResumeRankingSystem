@@ -244,6 +244,14 @@ export default function CandidateDashboard() {
                       </div>
                       <div className="job-card-meta">
                         <span className="meta-item">
+                          <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                          {job.location || 'Not specified'}
+                        </span>
+                        <span className="meta-item">
+                          <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                          {job.job_type || 'Not specified'}
+                        </span>
+                        <span className="meta-item">
                           <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                           {job.experience_required || 'Not specified'}
                         </span>
@@ -480,6 +488,9 @@ export default function CandidateDashboard() {
             <div className="detail-meta">
               <span>Skills: {detailJob.required_skills || detailJob.requirements || '-'}</span>
               <span>Experience: {detailJob.experience_required || 'Not specified'}</span>
+              <span>Location: {detailJob.location || 'Not specified'}</span>
+              <span>Job Type: {detailJob.job_type || 'Not specified'}</span>
+              <span>Openings: {detailJob.number_of_openings || 1}</span>
             </div>
             <div className="detail-description">
               <h4>Description</h4>

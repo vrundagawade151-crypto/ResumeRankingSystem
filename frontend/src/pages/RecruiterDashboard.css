@@ -189,6 +189,38 @@
   color: #4f46e5;
 }
 
+.btn-toggle-status {
+  display: inline-block;
+  padding: 8px 16px;
+  margin-left: 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-toggle-status.active {
+  background: #fecaca;
+  color: #dc2626;
+}
+
+.btn-toggle-status.active:hover {
+  background: #fca5a5;
+  color: #b91c1c;
+}
+
+.btn-toggle-status.closed {
+  background: #bfdbfe;
+  color: #1e40af;
+}
+
+.btn-toggle-status.closed:hover {
+  background: #93c5fd;
+  color: #1e3a8a;
+}
+
 .jobs-table td .btn-view-applicants,
 .jobs-table td .btn-ai-rank {
   display: inline-flex;

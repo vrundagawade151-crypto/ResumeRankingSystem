@@ -27,7 +27,8 @@ export default function JobPosting() {
       await createJob(form);
       navigate('/recruiter');
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to create job');
+      const message = err.response?.data?.message || err.response?.data?.error || 'Failed to create job';
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -129,30 +130,6 @@ export default function JobPosting() {
               />
             </div>
 
-            {error && <p className="error">{error}</p>}
-            <div className="form-actions">
-              <button type="button" className="btn btn-ghost" onClick={() => navigate('/recruiter')}>Cancel</button>
-              <button type="submit" className="btn btn-primary" disabled={loading}>{loading ? 'Creating...' : 'Create Job'}</button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-  );
-}
-                rows={6}
-                required
-              />
-            </div>
-            <div className="form-group">
-              <label>Number of Openings</label>
-              <input
-                type="number"
-                min={1}
-                value={form.number_of_openings}
-                onChange={(e) => setForm({ ...form, number_of_openings: parseInt(e.target.value) || 1 })}
-              />
-            </div>
             {error && <p className="error">{error}</p>}
             <div className="form-actions">
               <button type="button" className="btn btn-ghost" onClick={() => navigate('/recruiter')}>Cancel</button>

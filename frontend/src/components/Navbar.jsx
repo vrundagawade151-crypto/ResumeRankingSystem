@@ -19,7 +19,7 @@ export default function Navbar({ user, role }) {
         <div className="navbar-links">
           {!user ? (
             <>
-              <Link to="/login" className="nav-link">Login</Link>
+              <Link to="/role-selection" className="nav-link">Login</Link>
             </>
           ) : (
             <>

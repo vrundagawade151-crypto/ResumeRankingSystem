@@ -32,12 +32,12 @@ export default function Landing() {
           <div className="cta-card recruiter-cta">
             <h3>For Recruiters</h3>
             <p>Find top talent with instant ranking and AI screening.</p>
-            <Link to="/login?role=recruiter" className="btn btn-primary">Post a Job</Link>
+            <Link to="/login?role=recruiter" className="btn btn-primary">Apply Now</Link>
           </div>
           <div className="cta-card candidate-cta">
             <h3>For Candidates</h3>
             <p>Apply to jobs and get noticed faster.</p>
-            <Link to="/login?role=candidate" className="btn btn-accent">Sign Up Now</Link>
+            <Link to="/login?role=candidate" className="btn btn-accent">Apply Now</Link>
           </div>
         </div>
       </section>

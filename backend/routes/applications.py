@@ -4,6 +4,7 @@ from config import Config
 from database import db
 from models.job import Job
 from models.application import Application
+from models.user import User
 import jwt
 
 applications_bp = Blueprint('applications', __name__)
@@ -14,22 +15,37 @@ def create_application():
     # Accept multipart/form-data
     if not request.form:
         return jsonify({'message': 'Missing form data'}), 400
+    
+    # Get user from token
+    token = request.headers.get('Authorization')
+    if not token:
+        return jsonify({'error': 'Authentication required'}), 401
+    
+    try:
+        token = token.replace('Bearer ', '')
+        data = jwt.decode(token, Config.SECRET_KEY, algorithms=['HS256'])
+        user_email = data.get('email')
+        user = User.query.filter_by(email=user_email).first()
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+    except Exception as e:
+        return jsonify({'error': 'Invalid token'}), 401
         
     job_id = request.form.get('job_id')
     applicant_name = request.form.get('name') or request.form.get('applicant_name')
     applicant_email = request.form.get('email') or request.form.get('applicant_email')
     
     if not job_id or not applicant_name or not applicant_email:
-        return jsonify({'message': 'Missing required fields'}), 400
+        return jsonify({'error': 'Missing required fields'}), 400
     
     try:
         job_id = int(job_id)
     except ValueError:
-        return jsonify({'message': 'Invalid job ID'}), 400
+        return jsonify({'error': 'Invalid job ID'}), 400
         
     job = Job.query.get(job_id)
     if not job:
-        return jsonify({'message': 'Job not found'}), 404
+        return jsonify({'error': 'Job not found'}), 404
     
     resume_file = request.files.get('resume')
     resume_path = ''
@@ -45,7 +61,7 @@ def create_application():
     # Create application
     application = Application(
         job_id=job_id,
-        user_id=request.form.get('user_id'),
+        user_id=user.id,
         applicant_name=applicant_name,
         applicant_email=applicant_email,
         resume_path=resume_path,

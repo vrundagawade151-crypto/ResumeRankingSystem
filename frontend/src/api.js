@@ -50,10 +50,14 @@ export const deleteJob = (id) => api.delete(`/jobs/${id}`);
 // Applications
 export const applyForJob = (formData) =>
   api.post('/applications', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' }
+    headers: { 'Content-Type': 'multipart/form-data' },
   });
 export const getApplicants = (jobId) => api.get(`/applications/job/${jobId}`);
 export const getMyApplications = () => api.get('/applications/candidate');
+
+// New function: Update application status
+export const updateApplicationStatus = (applicationId, status) =>
+  api.put(`/applications/${applicationId}/status`, { status });
 
 // Recruiter
 export const getRecruiterProfile = () => api.get('/recruiter/profile');

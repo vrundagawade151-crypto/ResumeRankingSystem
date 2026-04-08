@@ -217,3 +217,10 @@ git commit -m "Updated code"
 
 # 5. Push to arya branch
 git push origin arya
+
+
+
+
+database - supabase cloud server is used for global database
+
+

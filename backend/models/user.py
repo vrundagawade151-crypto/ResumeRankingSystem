@@ -12,6 +12,7 @@ class User(db.Model):
     is_admin = Column(Boolean, default=False)
     role = Column(String(50), default='candidate')  # candidate, recruiter, admin
     company = Column(String(200))
+    domain = Column(String(200))  # Domain/field for candidates (e.g., Software Engineering, Data Science)
     created_at = Column(DateTime, default=datetime.utcnow)
     
     def to_dict(self):
@@ -22,5 +23,6 @@ class User(db.Model):
             'is_admin': self.is_admin,
             'role': self.role,
             'company': self.company,
+            'domain': self.domain,
             'created_at': self.created_at.isoformat() if self.created_at else None
         }

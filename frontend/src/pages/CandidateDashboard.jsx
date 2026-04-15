@@ -126,8 +126,14 @@ export default function CandidateDashboard() {
   }, [applications, applicationFilter, applicationSearch, applicationSort, jobs]);
 
   const handleLogout = () => {
-    localStorage.clear();
-    navigate('/');
+    const token = localStorage.getItem('token');
+    fetch('/api/auth/logout', {
+      method: 'POST',
+      headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+    }).finally(() => {
+      localStorage.clear();
+      navigate('/');
+    });
   };
 
   const handleWithdraw = async (appId) => {

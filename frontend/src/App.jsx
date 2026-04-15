@@ -8,6 +8,7 @@ import RecruiterDashboard from './pages/RecruiterDashboard';
 import JobPosting from './pages/JobPosting';
 import ApplicantList from './pages/ApplicantList';
 import ResumeRanking from './pages/ResumeRanking';
+import JobReport from './pages/JobReport';
 import AdminDashboard from './pages/AdminDashboard';
 
 function ProtectedRoute({ children, roles = [] }) {
@@ -45,6 +46,7 @@ export default function App() {
           <Route path="jobs/new" element={<JobPosting />} />
           <Route path="jobs/:jobId/applicants" element={<ApplicantList />} />
           <Route path="jobs/:jobId/ranking" element={<ResumeRanking />} />
+          <Route path="reports/:jobId" element={<JobReport />} />
         </Route>
         <Route
           path="/admin"

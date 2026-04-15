@@ -15,6 +15,8 @@ export default function JobPosting() {
     number_of_openings: 1,
     location: '',
     job_type: 'full-time',
+    domain: '',
+    deadline: ''
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -105,6 +107,26 @@ export default function JobPosting() {
                   min={1}
                   value={form.number_of_openings}
                   onChange={(e) => setForm({ ...form, number_of_openings: parseInt(e.target.value) || 1 })}
+                />
+              </div>
+            </div>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label>Domain/Field *</label>
+                <input
+                  value={form.domain}
+                  onChange={(e) => setForm({ ...form, domain: e.target.value })}
+                  placeholder="e.g. Software Engineering, Data Science"
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Application Deadline</label>
+                <input
+                  type="datetime-local"
+                  value={form.deadline}
+                  onChange={(e) => setForm({ ...form, deadline: e.target.value })}
                 />
               </div>
             </div>

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getApplicants, getJob } from '../api';
+import { getApplicants, getJob, updateApplicationStatus } from '../api';
 import './ApplicantList.css';
 
 export default function ApplicantList() {
@@ -33,13 +33,22 @@ export default function ApplicantList() {
   };
 
   const handleStatusChange = async (applicationId, newStatus) => {
-    console.log(`Updating application ${applicationId} to ${newStatus}`);
-    // Future: Add API call
+    try {
+      await updateApplicationStatus(applicationId, newStatus);
+      setApplicants((prev) =>
+        prev.map((app) =>
+          app.id === applicationId ? { ...app, status: newStatus } : app
+        )
+      );
+    } catch (err) {
+      console.error('Failed to update status', err);
+      alert('Failed to update status');
+    }
   };
 
   const downloadResume = (resumePath) => {
     if (resumePath) {
-      window.open(resumePath, '_blank');
+      window.open('/api/applications/resume/' + encodeURIComponent(resumePath), '_blank');
     }
   };
 
@@ -91,16 +100,16 @@ export default function ApplicantList() {
               {applicants.map((applicant) => (
                 <tr key={applicant.id} className={`status-${applicant.status || 'pending'}`}>
                   <td className="applicant-name">
-                    <strong>{applicant.candidate_name || 'Candidate'}</strong>
+                    <strong>{applicant.applicant_name || applicant.candidate_name || 'Candidate'}</strong>
                   </td>
-                  <td className="applicant-email">{applicant.email}</td>
+                  <td className="applicant-email">{applicant.applicant_email || applicant.email}</td>
                   <td>
                     <span className={`status-badge ${applicant.status || 'pending'}`}>
                       {(applicant.status || 'pending').charAt(0).toUpperCase() + (applicant.status || 'pending').slice(1)}
                     </span>
                   </td>
                   <td className="applied-date">
-                    {applicant.created_at ? new Date(applicant.created_at).toLocaleDateString() : 'N/A'}
+                    {applicant.applied_at || applicant.created_at ? new Date(applicant.applied_at || applicant.created_at).toLocaleDateString() : 'N/A'}
                   </td>
                   <td>
                     {applicant.resume_path ? (

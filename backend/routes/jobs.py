@@ -9,9 +9,12 @@ jobs_bp = Blueprint('jobs', __name__)
 @jobs_bp.route('/jobs', methods=['GET'])
 def get_jobs():
     status = request.args.get('status', 'active')
+    now = datetime.utcnow()
     
     if status == 'active':
-        jobs_list = Job.query.filter_by(is_active=True).all()
+        jobs_list = Job.query.filter_by(is_active=True).filter(
+            (Job.deadline.is_(None)) | (Job.deadline > now)
+        ).all()
     else:  # 'all'
         jobs_list = Job.query.all()
     
@@ -49,6 +52,13 @@ def create_job():
     if not data or not data.get('job_title') or not data.get('company_name') or not data.get('job_description'):
         return jsonify({'message': 'Missing required fields'}), 400
     
+    deadline = None
+    if data.get('deadline'):
+        try:
+            deadline = datetime.fromisoformat(data['deadline'].replace('Z', '+00:00'))
+        except:
+            pass
+    
     job = Job(
         title=data.get('job_title', ''),
         company=data.get('company_name', ''),
@@ -59,7 +69,9 @@ def create_job():
         job_type=data.get('job_type', 'full-time'),
         experience_required=data.get('experience_required', ''),
         number_of_openings=data.get('number_of_openings', 1),
-        is_active=True
+        is_active=True,
+        domain=data.get('domain', ''),
+        deadline=deadline
     )
 
     try:

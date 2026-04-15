@@ -39,13 +39,13 @@ def send_otp():
     if not data or not data.get('email') or not data.get('role'):
         return jsonify({'message': 'Email and role are required'}), 400
     
-    email = data['email']
-    role = data['role']  # 'candidate', 'recruiter', or 'admin'
+    email = data['email'].strip().lower()
+    role = data['role'].strip().lower()
     
     # Generate 6-digit OTP
     otp = str(random.randint(100000, 999999))
     
-    # Store OTP with 5-minute expiry
+    # Store OTP with 5-minute expiry (use lowercase email for consistency)
     otp_store[email] = {
         'otp': otp,
         'expiry': datetime.utcnow() + timedelta(minutes=5),
@@ -53,6 +53,8 @@ def send_otp():
         'name': data.get('name', ''),
         'company': data.get('company', '')
     }
+    
+    print(f"OTP stored for {email}: {otp}")
     
     # In production, send via email/SMS
     # For demo, OTP is returned in response
@@ -71,24 +73,45 @@ def verify_otp():
     if not data or not data.get('email') or not data.get('otp') or not data.get('role'):
         return jsonify({'message': 'Email, OTP, and role are required'}), 400
     
-    email = data['email']
-    otp = data['otp']
-    role = data['role']
+    email = data['email'].strip().lower()
+    otp = data['otp'].strip()
+    role = data['role'].strip().lower()
+    
+    print(f"Verifying OTP for email: {email}, role: {role}")
     
     # Check if OTP exists and is valid
-    if email not in otp_store:
-        return jsonify({'message': 'OTP not requested or expired'}), 400
+    stored_emails = [k.strip().lower() for k in otp_store.keys()]
+    if email not in stored_emails:
+        print(f"Email not found. Looking for: {email}")
+        print(f"Available emails: {stored_emails}")
+        return jsonify({'message': 'OTP not found or expired. Please request a new OTP.'}), 400
     
-    otp_data = otp_store[email]
+    # Find the matching email in store
+    actual_email = None
+    for k in otp_store.keys():
+        if k.strip().lower() == email:
+            actual_email = k
+            break
     
-    # Verify OTP and role match
-    if otp_data['otp'] != otp or otp_data['role'] != role:
-        return jsonify({'message': 'Invalid OTP'}), 400
+    if not actual_email:
+        return jsonify({'message': 'OTP not found or expired. Please request a new OTP.'}), 400
     
-    # Check if OTP is expired
+    otp_data = otp_store[actual_email]
+    
+    # Check if OTP is expired first
     if datetime.utcnow() > otp_data['expiry']:
-        del otp_store[email]
-        return jsonify({'message': 'OTP expired'}), 400
+        del otp_store[actual_email]
+        return jsonify({'message': 'OTP expired. Please request a new OTP.'}), 400
+    
+    # Verify OTP
+    if otp_data['otp'] != otp:
+        print(f"OTP mismatch: stored={otp_data['otp']}, provided={otp}")
+        return jsonify({'message': 'Invalid OTP. Please check and try again.'}), 400
+    
+    # Verify role
+    if otp_data['role'] != role:
+        print(f"Role mismatch: stored={otp_data['role']}, provided={role}")
+        return jsonify({'message': 'Role mismatch. Please request OTP for the correct role.'}), 400
     
     # Find or create user in database
     user = User.query.filter_by(email=email).first()
@@ -245,4 +268,9 @@ def upload_candidate_resume(current_user):
         'resume_path': resume_path,
         'extracted_details': extracted_details
     }), 200
+
+@auth_bp.route('/auth/logout', methods=['POST'])
+def logout():
+    """Logout user"""
+    return jsonify({'message': 'Logged out successfully'}), 200
 

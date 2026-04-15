@@ -16,6 +16,8 @@ class Job(db.Model):
     experience_required = Column(String(200))  # entry-level, mid-level, senior-level, lead-principal
     number_of_openings = Column(Integer, default=1)
     is_active = Column(Boolean, default=True)
+    domain = Column(String(200))  # Domain required for the job
+    deadline = Column(DateTime)  # Application deadline
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
@@ -32,6 +34,8 @@ class Job(db.Model):
             'experience_required': self.experience_required,
             'number_of_openings': self.number_of_openings,
             'is_active': self.is_active,
+            'domain': self.domain,
+            'deadline': self.deadline.isoformat() if self.deadline else None,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }

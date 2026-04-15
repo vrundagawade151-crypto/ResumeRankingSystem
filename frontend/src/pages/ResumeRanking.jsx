@@ -17,8 +17,8 @@ export default function ResumeRanking() {
     setLoading(true);
     Promise.all([
       getJob(jobId).then((r) => r.data.job),
-      getApplicants(jobId).then((r) => r.data.applicants || []),
-      getRankedCandidates(jobId).then((r) => r.data.ranked_candidates || []).catch(() => []),
+      getApplicants(jobId).then((r) => r.data.applicants || r.data || []),
+      getRankedCandidates(jobId).then((r) => r.data.ranked_candidates || r.data.candidates || []).catch(() => []),
     ])
       .then(([j, a, r]) => {
         setJob(j);
@@ -44,14 +44,14 @@ export default function ResumeRanking() {
     }
   };
 
-  const displayList = ranked.length > 0 ? ranked : applicants.map((a) => ({ ...a, ranking_score: null }));
+  const displayList = ranked.length > 0 ? ranked : applicants.map((a) => ({ ...a, score: a.ai_score }));
 
   return (
     <div className="resume-ranking-page">
       <div className="container page-content">
         <Link to={`/recruiter/jobs/${jobId}/applicants`} className="back-link">← Back to Applicants</Link>
         <h1>AI Resume Screening</h1>
-        <p className="subtitle">{job?.job_title} — {job?.company_name}</p>
+        <p className="subtitle">{job?.job_title || job?.title} — {job?.company_name || job?.company}</p>
 
         <div className="ranking-controls card">
           <h3>Extract & Rank Resumes</h3>
@@ -77,7 +77,7 @@ export default function ResumeRanking() {
               {extracting ? 'Processing...' : '🤖 Extract Resume'}
             </button>
           </div>
-          <p className="hint">Uses NLP to extract skills, education, experience. Ranks by 60% skill + 20% experience + 20% education match.</p>
+          <p className="hint">Uses NLP to extract text from PDF/DOCX resumes and match with job requirements.</p>
         </div>
 
         {loading ? (
@@ -90,23 +90,22 @@ export default function ResumeRanking() {
             ) : (
               <div className="ranked-cards">
                 {displayList.map((c, i) => (
-                  <div key={c.id || i} className="ranked-card card">
+                  <div key={c.application_id || c.id || i} className="ranked-card card">
                     <div className="rank-badge">
-                      #{i + 1} {c.ranking_score != null && (
-                        <span className="score">Score: {typeof c.ranking_score === 'number' ? c.ranking_score.toFixed(1) : c.ranking_score}%</span>
+                      #{i + 1} {(c.score != null) && (
+                        <span className="score">Score: {typeof c.score === 'number' ? c.score.toFixed(0) : c.score}%</span>
                       )}
                     </div>
-                    <h4>{c.name || c.extracted_name}</h4>
-                    <p className="email">{c.email}</p>
+                    <h4>{c.applicant_name || c.name}</h4>
+                    <p className="email">{c.applicant_email || c.email}</p>
                     {(c.extracted_skills || c.skills) && (
                       <p><strong>Skills:</strong> {c.extracted_skills || c.skills}</p>
                     )}
-                    {(c.resume_extraction || (c.skill_match_score != null)) && (
-                      <div className="score-breakdown">
-                        <span>Skill: {c.resume_extraction?.skill_match_score ?? c.skill_match_score ?? '-'}%</span>
-                        <span>Exp: {c.resume_extraction?.experience_match_score ?? c.experience_match_score ?? '-'}%</span>
-                        <span>Edu: {c.resume_extraction?.education_match_score ?? c.education_match_score ?? '-'}%</span>
-                      </div>
+                    {c.extracted_experience && (
+                      <p><strong>Experience:</strong> {c.extracted_experience}</p>
+                    )}
+                    {c.extracted_education && (
+                      <p><strong>Education:</strong> {c.extracted_education}</p>
                     )}
                   </div>
                 ))}

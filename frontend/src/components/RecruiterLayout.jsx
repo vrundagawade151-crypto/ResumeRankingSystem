@@ -1,4 +1,6 @@
+import { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
+import { getNotifications, markNotificationsRead } from '../api';
 import './RecruiterLayout.css';
 
 const navItems = [
@@ -15,10 +17,47 @@ export default function RecruiterLayout() {
   const navigate = useNavigate();
   const profile = JSON.parse(localStorage.getItem('profile') || '{}');
   const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const [notifications, setNotifications] = useState([]);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
-  const handleLogout = () => {
-    localStorage.clear();
-    navigate('/');
+  useEffect(() => {
+    loadNotifications();
+    const interval = setInterval(loadNotifications, 30000); // Check every 30 seconds
+    return () => clearInterval(interval);
+  }, []);
+
+  const loadNotifications = async () => {
+    try {
+      const res = await getNotifications();
+      const notifs = res.data.notifications || [];
+      setNotifications(notifs.reverse());
+      setUnreadCount(notifs.filter(n => !n.read).length);
+    } catch (err) {
+      console.error('Failed to load notifications:', err);
+    }
+  };
+
+  const handleNotificationClick = async (notif) => {
+    await markNotificationsRead();
+    navigate(`/recruiter/jobs/${notif.job_id}/applicants`);
+    setShowNotifications(false);
+    loadNotifications();
+  };
+
+  const handleLogout = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+    } catch (err) {
+      // Ignore logout API errors
+    } finally {
+      localStorage.clear();
+      navigate('/login');
+    }
   };
 
   const isActive = (path, label) => {
@@ -67,19 +106,53 @@ export default function RecruiterLayout() {
             <input type="search" placeholder="Search jobs, applicants..." className="search-input" />
           </div>
           <div className="header-actions">
-            <button type="button" className="header-icon-btn" aria-label="Notifications">
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-              </svg>
-              <span className="notification-dot" />
-            </button>
+            <div className="notification-container">
+              <button 
+                type="button" 
+                className="header-icon-btn" 
+                aria-label="Notifications"
+                onClick={() => setShowNotifications(!showNotifications)}
+              >
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
+                {unreadCount > 0 && <span className="notification-dot" />}
+              </button>
+              {showNotifications && (
+                <div className="notification-dropdown">
+                  <div className="notification-header">
+                    <h4>Notifications</h4>
+                    <span className="notification-count">{unreadCount} new</span>
+                  </div>
+                  <div className="notification-list">
+                    {notifications.length === 0 ? (
+                      <p className="notification-empty">No new notifications</p>
+                    ) : (
+                      notifications.slice(0, 10).map((notif) => (
+                        <div 
+                          key={notif.id} 
+                          className="notification-item"
+                          onClick={() => handleNotificationClick(notif)}
+                        >
+                          <div className="notification-icon">📬</div>
+                          <div className="notification-content">
+                            <p className="notification-message">{notif.message}</p>
+                            <span className="notification-time">{notif.created_at ? new Date(notif.created_at).toLocaleString() : 'Just now'}</span>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
             <div className="header-profile">
               <div className="profile-avatar">
                 {(profile.name || user?.name || user?.email || 'R').charAt(0).toUpperCase()}
               </div>
               <div className="profile-info">
-                <span className="profile-name">{profile.name || user?.name || 'Recruiter'}</span>
-                <span className="profile-role">{profile.company_name || 'Company'}</span>
+                <span className="profile-name">{profile.name || user?.name || user?.email?.split('@')[0] || 'Recruiter'}</span>
+                <span className="profile-role">{user?.email || profile.company_name || 'Recruiter'}</span>
               </div>
             </div>
           </div>

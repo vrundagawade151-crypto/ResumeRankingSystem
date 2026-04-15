@@ -5,8 +5,14 @@ export default function Navbar({ user, role }) {
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    localStorage.clear();
-    navigate('/');
+    const token = localStorage.getItem('token');
+    fetch('/api/auth/logout', {
+      method: 'POST',
+      headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+    }).finally(() => {
+      localStorage.clear();
+      navigate('/');
+    });
   };
 
   return (

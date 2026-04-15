@@ -36,7 +36,7 @@ def create_app(config_class=Config):
     @app.route('/')
     def index():
         return jsonify({
-            'message': 'Expense Tracker API is running',
+            'message': 'Resume Ranking API is running',
             'version': '1.0.0'
         }), 200
     

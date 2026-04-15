@@ -4,7 +4,7 @@ const API_BASE = '/api';
 
 const api = axios.create({
   baseURL: API_BASE,
-  headers: { 'Content-Type': 'application/json' },
+  // Don't set default Content-Type - let axios determine it based on data
 });
 
 api.interceptors.request.use((config) => {
@@ -49,11 +49,11 @@ export const deleteJob = (id) => api.delete(`/jobs/${id}`);
 
 // Applications
 export const applyForJob = (formData) =>
-  api.post('/applications', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  });
+  api.post('/applications', formData); // Let axios set Content-Type automatically for FormData
 export const getApplicants = (jobId) => api.get(`/applications/job/${jobId}`);
 export const getMyApplications = () => api.get('/applications/candidate');
+export const getNotifications = () => api.get('/notifications');
+export const markNotificationsRead = () => api.post('/notifications/mark-read');
 
 // New function: Update application status
 export const updateApplicationStatus = (applicationId, status) =>
@@ -62,6 +62,8 @@ export const updateApplicationStatus = (applicationId, status) =>
 // Recruiter
 export const getRecruiterProfile = () => api.get('/recruiter/profile');
 export const updateRecruiterProfile = (data) => api.put('/recruiter/profile', data);
+export const getRecruiterReports = () => api.get('/recruiter/reports');
+export const getRecruiterReport = (jobId) => api.get(`/recruiter/reports/${jobId}`);
 
 // Admin
 export const getRecruiters = () => api.get('/admin/recruiters');

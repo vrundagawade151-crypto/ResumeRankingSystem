@@ -60,7 +60,9 @@ export default function Login() {
       else if (res.data.role === 'recruiter') navigate('/recruiter');
       else navigate('/admin');
     } catch (err) {
-      setError(err.response?.data?.error || 'Invalid OTP');
+      const errMsg = err.response?.data?.message || err.response?.data?.error || 'Invalid OTP. Please try again.';
+      setError(errMsg);
+      console.error('OTP verification error:', err.response?.data);
     } finally {
       setLoading(false);
     }

@@ -148,6 +148,7 @@ export default function RecruiterDashboard() {
                         View Applicants
                       </Link>
                       <Link to={`/recruiter/jobs/${job.id}/ranking`} className="btn btn-ai-rank">AI Rank</Link>
+                      <Link to={`/recruiter/reports/${job.id}`} className="btn btn-report">Report</Link>
                     </td>
                   </tr>
                 ))}

@@ -15,6 +15,7 @@ export default function Login() {
     return 'role';
   };
   const [step, setStep] = useState(getInitialStep()); // role | email | otp | direct
+  const [isLoginMode, setIsLoginMode] = useState(false);
   const [role, setRole] = useState(roleParam || 'candidate');
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
@@ -117,11 +118,12 @@ export default function Login() {
           {/* OTP flow - email */}
           {step === 'email' && (
             <form onSubmit={handleSendOTP}>
+              <h2>{isLoginMode ? 'Log In' : 'Sign Up'}</h2>
               <div className="form-group">
                 <label>Email</label>
                 <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="you@example.com" />
               </div>
-              {role === 'recruiter' && (
+              {!isLoginMode && role === 'recruiter' && (
                 <>
                   <div className="form-group">
                     <label>Full Name</label>
@@ -133,7 +135,7 @@ export default function Login() {
                   </div>
                 </>
               )}
-              {role === 'candidate' && (
+              {!isLoginMode && role === 'candidate' && (
                 <div className="form-group">
                   <label>Full Name</label>
                   <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Jane Doe" />
@@ -141,9 +143,17 @@ export default function Login() {
               )}
               {error && <p className="error">{error}</p>}
               <button type="submit" className="btn btn-primary btn-block" disabled={loading}>
-                {loading ? 'Sending...' : 'Send OTP'}
+                {loading ? 'Sending...' : (isLoginMode ? 'Send login OTP' : 'Sign Up')}
               </button>
-              <button type="button" className="btn btn-ghost btn-block" onClick={() => setStep('role')}>Back</button>
+              
+              <div style={{ textAlign: 'center', marginTop: '1rem', fontSize: '0.9rem' }}>
+                {isLoginMode ? "Don't have an account? " : "Already have an account? "}
+                <span onClick={() => setIsLoginMode(!isLoginMode)} style={{ cursor: 'pointer', color: 'var(--primary)', fontWeight: 'bold' }}>
+                  {isLoginMode ? 'Sign up' : 'Log in'}
+                </span>
+              </div>
+
+              <button type="button" className="btn btn-ghost btn-block" onClick={() => navigate('/')} style={{ marginTop: '1rem' }}>Back</button>
             </form>
           )}
 
@@ -179,7 +189,7 @@ export default function Login() {
               <button type="submit" className="btn btn-primary btn-block" disabled={loading}>
                 {loading ? 'Logging in...' : 'Login'}
               </button>
-              <button type="button" className="btn btn-ghost btn-block" onClick={() => setStep('role')}>Back</button>
+              <button type="button" className="btn btn-ghost btn-block" onClick={() => navigate('/')}>Back</button>
             </form>
           )}
         </div>

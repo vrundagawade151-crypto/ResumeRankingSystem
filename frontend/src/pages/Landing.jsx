@@ -1,4 +1,4 @@
-﻿import { Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import './Landing.css';
 
@@ -16,9 +16,8 @@ export default function Landing() {
             <h1>AI-Based Resume Screening &amp; Ranking System</h1>
             <p>Find the best candidates fast with AI-powered screening.</p>
             <div className="hero-actions">
-              <Link to="/role-selection" className="btn btn-primary btn-lg">Get Started</Link>
-              <Link to="/login?role=candidate" className="btn btn-accent btn-lg">Login as Candidate</Link>
-              <Link to="/login?role=recruiter" className="btn btn-outline btn-lg">Login as Recruiter</Link>
+              <Link to="/login" className="btn btn-primary btn-lg">Get Started</Link>
+              <Link to="/login?role=recruiter" className="btn btn-outline btn-lg">Post a Job</Link>
             </div>
           </div>
           <div className="hero-visual">
@@ -32,12 +31,12 @@ export default function Landing() {
           <div className="cta-card recruiter-cta">
             <h3>For Recruiters</h3>
             <p>Find top talent with instant ranking and AI screening.</p>
-            <Link to="/login?role=recruiter" className="btn btn-primary">Apply Now</Link>
+            <Link to="/login?role=recruiter" className="btn btn-primary">Get Started</Link>
           </div>
           <div className="cta-card candidate-cta">
             <h3>For Candidates</h3>
             <p>Apply to jobs and get noticed faster.</p>
-            <Link to="/login?role=candidate" className="btn btn-accent">Apply Now</Link>
+            <Link to="/login?role=candidate" className="btn btn-accent">Get Started</Link>
           </div>
         </div>
       </section>
